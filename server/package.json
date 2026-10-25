@@ -11,7 +11,8 @@
     "gemini:check": "node scripts/gemini-check.js",
     "gemini:models": "node scripts/gemini-models.js",
     "gemini:text": "node scripts/gemini-text.js",
-    "gemini:curl": "node scripts/gemini-curl.js"
+    "gemini:curl": "node scripts/gemini-curl.js",
+    "gemini:interactions": "node scripts/gemini-interactions.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
