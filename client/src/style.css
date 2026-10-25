@@ -899,3 +899,4 @@ button:disabled{cursor:not-allowed}
 .new-user{padding:24px;margin:24px 0}.new-user form{padding:20px 0 0}.new-user .primary{margin-top:20px}.team-role{margin:20px 0;padding:16px 0;border-top:1px solid #e1e8e3}.team-role button{margin:14px 0;font-size:11px;text-decoration:underline}
 
 .password-reset{margin-top:22px;border-top:1px solid #dfe8e1;padding-top:20px}.password-reset summary{cursor:pointer;font-size:12px}.password-reset>label{margin:18px 0}.password-reset>.primary{margin:10px 0}.password-reset>p{margin:12px 0}
+.account-card{max-width:620px;margin:10px auto;padding:30px}.account-card>p{margin:15px 0}.account-card form{padding:25px 0 0}.account-card form>label:not(.consent){margin-bottom:22px}

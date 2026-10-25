@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import {
   Scale,
   Users,
+  KeyRound,
   LayoutDashboard,
   Clock3,
   ArrowUpRight,
@@ -18,6 +19,7 @@ import "./style.css";
 import { ClarificationManager, ClarificationReply } from "./Clarifications.jsx";
 import Evaluation, { ClientResponse } from "./Evaluation.jsx";
 import Team from "./Team.jsx";
+import Account from "./Account.jsx";
 import DocumentReview from "./DocumentReview.jsx";
 async function api(path, options = {}) {
   const r = await fetch("/api" + path, {
@@ -165,6 +167,14 @@ function App() {
               <Users size={18} /> Equipo
             </button>
           )}
+          {user && (
+            <button
+              className={view === "account" ? "active" : ""}
+              onClick={() => change("account")}
+            >
+              <KeyRound size={18} /> Mi cuenta
+            </button>
+          )}
         </nav>
         <div className="aside-bottom">
           <div className="secure">
@@ -210,7 +220,9 @@ function App() {
                     ? "Acceso privado"
                     : view === "team"
                       ? "Equipo y especialidades"
-                      : "Panel de consultas"}
+                      : view === "account"
+                        ? "Mi cuenta"
+                        : "Panel de consultas"}
             </strong>
           </span>
           <span className="header-note">
@@ -480,6 +492,7 @@ function App() {
               </form>
             </section>
           )}
+          {user && view === "account" && <Account api={api} user={user} />}
           {user && canManage && view === "team" && (
             <Team api={api} user={user} />
           )}

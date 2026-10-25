@@ -9,7 +9,7 @@ import jwt from "jsonwebtoken";
 const base = "http://127.0.0.1:3002/api",
   suffix = randomBytes(6).toString("hex"),
   oldPassword = randomBytes(24).toString("hex"),
-  newPassword = randomBytes(24).toString("hex");
+  newPassword = randomBytes(4).toString("hex");
 let child;
 const users = [];
 async function req(cookie, path, method = "GET", body) {
@@ -91,6 +91,42 @@ try {
   assert.notEqual(rows[0].password_hash, newPassword);
   assert.equal(rows[0].session_version, 1);
   assert.ok(await bcrypt.compare(newPassword, rows[0].password_hash));
+  const ownPassword = randomBytes(4).toString("hex");
+  assert.equal(
+    (
+      await req(support.cookie, "/me/password", "PUT", {
+        current_password: "equivocada",
+        password: ownPassword,
+        confirmation: ownPassword,
+      })
+    ).status,
+    400,
+  );
+  assert.equal(
+    (
+      await req(support.cookie, "/me/password", "PUT", {
+        current_password: oldPassword,
+        password: ownPassword,
+        confirmation: ownPassword,
+      })
+    ).status,
+    200,
+  );
+  assert.equal((await req(support.cookie, "/me")).status, 401);
+  assert.equal((await login(support.email, oldPassword)).status, 401);
+  assert.equal((await login(support.email, ownPassword)).status, 200);
+  const freshCookie = fresh.headers.get("set-cookie").split(";")[0];
+  assert.equal(
+    (
+      await req(freshCookie, "/me/password", "PUT", {
+        current_password: newPassword,
+        password: ownPassword,
+        confirmation: ownPassword,
+      })
+    ).status,
+    200,
+  );
+  assert.equal((await req(freshCookie, "/me")).status, 401);
   const self = await req(
     manager.cookie,
     `/users/${manager.id}/password`,

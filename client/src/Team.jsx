@@ -201,7 +201,7 @@ function NewUser({ api, onSaved }) {
     <section className="card new-user">
       <h2>Crear cuenta del equipo</h2>
       <p className="help">
-        Define un rol y una contraseña única de 12 a 72 caracteres. Compártela
+        Define un rol y una contraseña única de 8 a 72 caracteres. Compártela
         con el destinatario por un canal privado; no se envía por correo.
       </p>
       {error && (
@@ -256,7 +256,7 @@ function NewUser({ api, onSaved }) {
               name="password"
               type="password"
               required
-              minLength={12}
+              minLength={8}
               maxLength={72}
               autoComplete="new-password"
             />
@@ -326,7 +326,7 @@ function PasswordReset({ member, api, disabled }) {
         className="primary"
         type="button"
         disabled={
-          busy || disabled || password.length < 12 || password !== confirmation
+          busy || disabled || password.length < 8 || password !== confirmation
         }
         onClick={async () => {
           setBusy(true);
@@ -351,8 +351,8 @@ function PasswordReset({ member, api, disabled }) {
         {busy ? "Restableciendo…" : "Guardar nueva contraseña"}
       </button>
       <p className="help">
-        Usa entre 12 y 72 caracteres. Ambos campos deben coincidir. Si cambias
-        la tuya, tendrás que iniciar sesión otra vez.
+        Usa entre 8 y 72 caracteres. Ambos campos deben coincidir. Si cambias la
+        tuya, tendrás que iniciar sesión otra vez.
       </p>
     </details>
   );

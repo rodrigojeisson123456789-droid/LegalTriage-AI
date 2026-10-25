@@ -10,7 +10,7 @@ Requisitos: Node.js 22 o superior, npm y Docker con Compose (o MySQL 8 existente
 2. Copiar `server/.env.example` a `server/.env` **solo si no existe**. Establecer contraseñas propias, `JWT_SECRET` aleatorio de 32 caracteres o más y `MYSQL_ROOT_PASSWORD` si se usa Docker. Nunca versionar este archivo.
 3. `docker compose --env-file server/.env up -d` y esperar estado healthy con `docker compose --env-file server/.env ps`. Si usas MySQL existente, configura DB_HOST, DB_PORT, DB_USER, DB_PASSWORD y DB_NAME; la base debe existir.
 4. `npm run db:init` (crea las tablas sin borrar datos; se puede repetir).
-5. Crear usuario desde `server/`: `ADMIN_NAME='Nombre del abogado' ADMIN_EMAIL='abogado@example.com' node src/create-user.js`, suministrando `ADMIN_PASSWORD` mediante una variable segura (mínimo 12 caracteres). La primera cuenta creada por CLI recibe Gerencia si no existe otra; las posteriores usan ADMIN_ROLE o Soporte por defecto. No hay registro público.
+5. Crear usuario desde `server/`: `ADMIN_NAME='Nombre del abogado' ADMIN_EMAIL='abogado@example.com' node src/create-user.js`, suministrando `ADMIN_PASSWORD` mediante una variable segura (mínimo 8 caracteres). La primera cuenta creada por CLI recibe Gerencia si no existe otra; las posteriores usan ADMIN_ROLE o Soporte por defecto. No hay registro público.
 6. `npm run dev` desde la raíz. Vite sirve el frontend en puerto 5173 y delega `/api` al backend en 3001. Acceso del equipo abre el login.
 
 En este entorno se generó un `server/.env` local con secretos aleatorios para desarrollo. No contiene una clave de Gemini ni credenciales públicas de usuario. Crear tu propia cuenta mediante el paso 5.
@@ -190,7 +190,7 @@ Actualizar con `npm run db:init` añade `users.role`. En la primera migración e
 
 Los enlaces públicos del cliente siguen limitados a sus preguntas o su respuesta aprobada y no conceden acceso al panel. La API valida también el caso asociado a un ID de documento y filtra casos/plazos por responsable. Reasignar un caso retira acceso al abogado anterior en peticiones posteriores. Las escrituras transaccionales de expedientes vuelven a comprobar acceso al guardar, incluido el análisis de IA. Los datos que ya se mostraron en el navegador antes de una revocación no se pueden retirar retrospectivamente.
 
-En **Equipo → Crear cuenta**, Gerencia introduce nombre, correo, contraseña inicial de 12 a 72 caracteres y rol. Las contraseñas se guardan con bcrypt y no se envían por correo. No puedes cambiar tu propio rol; otra Gerencia debe hacerlo. No se permite dejar al sistema sin Gerencia, ni convertir en Soporte a alguien con casos activos: reasignarlos primero. Cambiar a Soporte desactiva la disponibilidad automática; los perfiles de Soporte no pueden activarse. Gerencia puede atender casos si así se configura.
+En **Equipo → Crear cuenta**, Gerencia introduce nombre, correo, contraseña inicial de 8 a 72 caracteres y rol. Las contraseñas se guardan con bcrypt y no se envían por correo. No puedes cambiar tu propio rol; otra Gerencia debe hacerlo. No se permite dejar al sistema sin Gerencia, ni convertir en Soporte a alguien con casos activos: reasignarlos primero. Cambiar a Soporte desactiva la disponibilidad automática; los perfiles de Soporte no pueden activarse. Gerencia puede atender casos si así se configura.
 
 Para crear por PowerShell desde la raíz (valores locales, no compartir credenciales):
 
@@ -209,8 +209,14 @@ Si cambia el rol de una sesión abierta, recargar el navegador actualiza las vis
 
 ### Restablecer una contraseña desde Gerencia
 
-Ejecutar `npm run db:init` tras actualizar añade `users.session_version` sin cambiar contraseñas existentes. En Equipo, abrir **Restablecer contraseña de [usuario]**, escribir y repetir una nueva clave y pulsar **Guardar nueva contraseña**. Conserva la cuenta, rol y casos. Requiere entre 12 y 72 caracteres y un máximo de 72 bytes UTF-8 para evitar truncamiento de bcrypt. La clave no se muestra ni se envía por correo. No es posible recuperar la anterior desde el hash.
+Ejecutar `npm run db:init` tras actualizar añade `users.session_version` sin cambiar contraseñas existentes. En Equipo, abrir **Restablecer contraseña de [usuario]**, escribir y repetir una nueva clave y pulsar **Guardar nueva contraseña**. Conserva la cuenta, rol y casos. Requiere entre 8 y 72 caracteres y un máximo de 72 bytes UTF-8 para evitar truncamiento de bcrypt. La clave no se muestra ni se envía por correo. No es posible recuperar la anterior desde el hash.
 
 `PUT /api/users/:id/password` está reservado a Gerencia. Incrementa la versión de sesión y rechaza cookies anteriores a partir de la siguiente petición, incluidas cookies antiguas que no tenían versión. Si Gerencia cambia su propia contraseña, la interfaz se recarga y exige iniciar sesión con la nueva. Las sesiones existentes se conservan al migrar mientras no haya un restablecimiento. No incluye recuperación autoservicio ni enlace por email.
 
 Desde `server/`, `node scripts/password-smoke.js` valida permisos, confirmación, hash, rechazo de la contraseña anterior, revocación y nuevo acceso con MySQL real; limpia sus cuentas de prueba y no contacta Gemini/Gmail.
+
+### Contraseña elegida por cada usuario
+
+La política actual admite de 8 a 72 caracteres (máximo 72 bytes UTF-8 por bcrypt), sin exigir mayúsculas, números ni símbolos. Se aplica a creación de cuentas, CLI, restablecimiento de Gerencia y cambio personal. Las contraseñas existentes siguen funcionando y no se acortan automáticamente.
+
+Cada rol dispone de **Mi cuenta**, donde introduce su contraseña actual, elige y repite la nueva, y puede mostrar los campos mientras escribe. `PUT /api/me/password` utiliza exclusivamente la identidad autenticada, valida la contraseña actual y revoca las sesiones previas al guardar. Después se debe iniciar sesión otra vez. Si olvidó la contraseña actual, Gerencia debe restablecerla desde Equipo. No hay registro público ni envío de contraseñas por correo.

@@ -9,6 +9,7 @@ export class AccessError extends Error {
 export function routeAllowed(role, method, path, body = {}) {
   if (!roles.includes(role)) return false;
   if (role === "gerencia") return true;
+  if (path === "/me/password" && method === "PUT") return true;
   if (
     ["/me", "/users", "/cases", "/deadlines", "/mail/config"].includes(path) &&
     method === "GET"

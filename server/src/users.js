@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import rateLimit from "express-rate-limit";
 import { db } from "./db.js";
 import { roles, AccessError } from "./access.js";
 export const usersRouter = Router();
@@ -9,7 +10,7 @@ export const newUserSchema = z.object({
   email: z.string().email().max(254),
   password: z
     .string()
-    .min(12)
+    .min(8)
     .max(72)
     .refine((v) => Buffer.byteLength(v, "utf8") <= 72, {
       message: "La contraseña no debe superar 72 bytes UTF-8.",
@@ -102,7 +103,7 @@ export const resetPasswordSchema = z
   .object({
     password: z
       .string()
-      .min(12)
+      .min(8)
       .max(72)
       .refine((v) => Buffer.byteLength(v, "utf8") <= 72, {
         message: "La contraseña no debe superar 72 bytes UTF-8.",
@@ -150,3 +151,69 @@ usersRouter.put("/users/:id/password", async (req, res) => {
     connection.release();
   }
 });
+
+export const changePasswordSchema = z
+  .object({
+    current_password: z.string().min(1).max(200),
+    password: newUserSchema.shape.password,
+    confirmation: z.string(),
+  })
+  .refine((v) => v.password === v.confirmation, {
+    message: "Las contraseñas no coinciden.",
+  });
+usersRouter.put(
+  "/me/password",
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 15,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+  }),
+  async (req, res) => {
+    const input = changePasswordSchema.parse(req.body);
+    const [rows] = await db.execute(
+      "SELECT password_hash,session_version FROM users WHERE id=?",
+      [req.user.id],
+    );
+    const previous = rows[0];
+    if (
+      !previous ||
+      !(await bcrypt.compare(input.current_password, previous.password_hash))
+    )
+      return res
+        .status(400)
+        .json({ error: "La contraseña actual no es correcta." });
+    const hash = await bcrypt.hash(input.password, 12),
+      connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+      const [current] = await connection.execute(
+        "SELECT password_hash,session_version FROM users WHERE id=? FOR UPDATE",
+        [req.user.id],
+      );
+      if (
+        !current[0] ||
+        current[0].session_version !== req.user.session_version ||
+        current[0].password_hash !== previous.password_hash
+      )
+        throw new AccessError(
+          "La cuenta cambió durante la operación. Inicia sesión de nuevo.",
+          401,
+        );
+      await connection.execute(
+        "UPDATE users SET password_hash=?,session_version=session_version+1 WHERE id=?",
+        [hash, req.user.id],
+      );
+      await connection.commit();
+      res.json({
+        message:
+          "Contraseña actualizada. Inicia sesión nuevamente con la nueva clave.",
+      });
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  },
+);

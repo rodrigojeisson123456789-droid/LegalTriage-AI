@@ -23,3 +23,37 @@ test("restablecer exige confirmación, mínimo seguro y permisos de Gerencia", (
   assert.equal(routeAllowed("abogado", "PUT", "/users/1/password"), false);
   assert.equal(routeAllowed("gerencia", "PUT", "/users/1/password"), true);
 });
+
+import { newUserSchema, changePasswordSchema } from "../src/users.js";
+test("se admiten 8 caracteres sin reglas de mayúsculas/números y el cambio propio exige contraseña actual", () => {
+  assert.ok(
+    newUserSchema.safeParse({
+      name: "Abogado prueba",
+      email: "test@example.com",
+      role: "abogado",
+      password: "abcdefgh",
+    }).success,
+  );
+  assert.ok(
+    resetPasswordSchema.safeParse({
+      password: "abcdefgh",
+      confirmation: "abcdefgh",
+    }).success,
+  );
+  assert.equal(
+    resetPasswordSchema.safeParse({
+      password: "abcdefg",
+      confirmation: "abcdefg",
+    }).success,
+    false,
+  );
+  assert.equal(
+    changePasswordSchema.safeParse({
+      password: "abcdefgh",
+      confirmation: "abcdefgh",
+    }).success,
+    false,
+  );
+  for (const role of ["gerencia", "abogado", "soporte"])
+    assert.equal(routeAllowed(role, "PUT", "/me/password"), true);
+});
