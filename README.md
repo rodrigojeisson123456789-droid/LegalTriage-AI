@@ -47,3 +47,38 @@ Dashboard y agenda muestran hasta 500 registros; paginación, roles diferenciado
 ## Despliegue
 
 Esta base usa Vite para desarrollo. Para producción, servir `client/dist` con un servidor web y delegar `/api` a Express bajo el mismo origen HTTPS. Configurar `NODE_ENV=production` para cookies Secure, secretos persistentes y MySQL protegido. Las sesiones JWT expiran a las 8 horas; salir elimina la cookie pero no revoca un token copiado. Configurar el proxy y los límites según el despliegue, copias de seguridad y políticas de acceso antes de usar datos reales. Google Fonts es opcional: la interfaz tiene tipografías de respaldo.
+
+## Documentos y análisis con Gemini (primera etapa del flujo)
+
+El formulario admite **un documento opcional por consulta**: PDF (hasta 50 páginas), PNG o JPG, de hasta 8 MB. Se verifica el formato por su contenido y se rechazan PDFs dañados o protegidos. El consentimiento incluye el envío del adjunto a Gemini. No adjuntar originales únicos ni información innecesaria.
+
+La consulta y el documento se guardan juntos, en una transacción de MySQL. El archivo se almacena como BLOB en la nueva tabla `documents`, no en una carpeta pública. Las copias de seguridad de MySQL deben incluir esa tabla. Los adjuntos aumentan el tamaño de la base; esta primera versión no incluye cuotas globales, antivirus ni una política automática de eliminación.
+
+Gemini recibe la descripción y el documento por HTTPS y devuelve un JSON validado con: resumen, especialidad sugerida, tipo documental, legibilidad, hallazgos con página, fechas textuales con contexto y página e información faltante. Las referencias deben contrastarse con el original; la IA puede equivocarse. No se calculan ni crean plazos automáticamente. El abogado registra los plazos confirmados en Control de plazos.
+
+Si no hay clave, hay timeout o Gemini devuelve un error, el archivo permanece guardado y el caso aparece como Indeterminado, pendiente de revisión. Desde el panel privado, **Ver documentos y análisis → Analizar con Gemini** permite reintentar sin reenviar la consulta. Un reintento fallido conserva un análisis anterior válido. Solo usuarios autenticados pueden consultar análisis y descargar originales; todos los usuarios internos tienen el mismo acceso en esta versión.
+
+### Actualizar una instalación existente en Windows
+
+Detener `npm run dev` con Ctrl+C. Con Docker Desktop abierto, ejecutar desde PowerShell en la raíz del proyecto:
+
+```powershell
+git pull origin main
+npm ci
+docker compose --env-file server/.env up -d
+npm run db:init
+npm run dev
+```
+
+`db:init` añade la tabla de documentos sin borrar usuarios, casos ni plazos existentes. No modificar las contraseñas de una base ya inicializada. Si MySQL todavía está arrancando, esperar a `healthy` antes de `db:init`.
+
+Configurar una clave **nueva y privada** en `GEMINI_API_KEY` de `server/.env`, guardar y reiniciar el backend. No compartir claves en chats ni versionarlas. No se ha usado la clave expuesta previamente. Sin clave funciona la recepción y descarga, pero no la lectura real de Gemini.
+
+Prueba manual: enviar un PDF con una fecha conocida, iniciar sesión, abrir Consultas → Ver documentos y análisis y descargar el original. Con clave válida debe aparecer el análisis; sin clave debe indicar pendiente y permitir reintentar. Una fecha extraída no debe aparecer automáticamente en Control de plazos.
+
+Endpoints adicionales, todos privados:
+- `GET /api/cases/:id/documents`: metadatos y análisis, sin contenido binario.
+- `GET /api/documents/:id/download`: descarga autenticada como adjunto.
+- `POST /api/documents/:id/analyze`: reintento de Gemini limitado por frecuencia.
+
+Pruebas: `npm test` incluye validación documental y Gemini con respuestas simuladas. Desde `server/`, `node scripts/documents-smoke.js` inicia una API temporal en puerto 3002, usa MySQL real, comprueba persistencia, acceso privado y fallos de carga, y elimina su cuenta y datos de prueba. No contacta Gemini ni necesita una clave. No usar simultáneamente con otra API en 3002.
