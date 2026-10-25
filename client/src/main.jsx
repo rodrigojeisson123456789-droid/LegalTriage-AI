@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import "./style.css";
 import { ClarificationManager, ClarificationReply } from "./Clarifications.jsx";
+import Evaluation, { ClientResponse } from "./Evaluation.jsx";
 import DocumentReview from "./DocumentReview.jsx";
 async function api(path, options = {}) {
   const r = await fetch("/api" + path, {
@@ -51,6 +52,8 @@ function App() {
     [modal, setModal] = useState(false),
     [documentCase, setDocumentCase] = useState(null),
     [clarificationCase, setClarificationCase] = useState(null),
+    [evaluationCase, setEvaluationCase] = useState(null),
+    [deadlineCase, setDeadlineCase] = useState(null),
     [attachmentName, setAttachmentName] = useState("");
   async function load() {
     const [c, d, u] = await Promise.all([
@@ -161,6 +164,7 @@ function App() {
                     setUsers([]);
                     setDocumentCase(null);
                     setClarificationCase(null);
+                    setEvaluationCase(null);
                     change("public");
                   })
                 : change("login")
@@ -575,6 +579,12 @@ function App() {
                               <span className="status">{c.status}</span>
                               <button
                                 className="text-button"
+                                onClick={() => setEvaluationCase(c.id)}
+                              >
+                                Evaluación y respuesta →
+                              </button>
+                              <button
+                                className="text-button"
                                 onClick={() => setClarificationCase(c.id)}
                               >
                                 Aclaraciones →
@@ -649,7 +659,13 @@ function App() {
                 <h1>
                   Control de plazos<span>.</span>
                 </h1>
-                <button className="primary" onClick={() => setModal(true)}>
+                <button
+                  className="primary"
+                  onClick={() => {
+                    setDeadlineCase(null);
+                    setModal(true);
+                  }}
+                >
                   <Plus size={17} /> Nuevo plazo
                 </button>
               </div>
@@ -714,6 +730,23 @@ function App() {
               </section>
             </>
           )}
+          {user && evaluationCase && (
+            <Evaluation
+              caseId={evaluationCase}
+              api={api}
+              onClose={() => {
+                setEvaluationCase(null);
+                load().catch((e) => setError(e.message));
+              }}
+              onRefresh={load}
+              onDeadlines={() => {
+                setDeadlineCase(evaluationCase);
+                setEvaluationCase(null);
+                setModal(true);
+                change("deadlines");
+              }}
+            />
+          )}
           {user && clarificationCase && (
             <ClarificationManager
               caseId={clarificationCase}
@@ -771,13 +804,19 @@ function App() {
                 >
                   <label>
                     Caso
-                    <select name="case_id" required>
+                    <select
+                      name="case_id"
+                      required
+                      defaultValue={deadlineCase || ""}
+                    >
                       <option value="">Selecciona un caso</option>
-                      {cases.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          #{c.id} · {c.name}
-                        </option>
-                      ))}
+                      {cases
+                        .filter((c) => c.status !== "Atención inicial cerrada")
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            #{c.id} · {c.name}
+                          </option>
+                        ))}
                     </select>
                   </label>
                   {input("Audiencia o escrito", "title", "text", {
@@ -823,6 +862,15 @@ function Root() {
     window.addEventListener("hashchange", update);
     return () => window.removeEventListener("hashchange", update);
   }, []);
+  const responseMatch = hash.match(/^#respuesta=([a-f0-9]{64})$/);
+  if (responseMatch)
+    return (
+      <ClientResponse
+        key={responseMatch[1]}
+        token={responseMatch[1]}
+        api={api}
+      />
+    );
   const match = hash.match(/^#aclaracion=([a-f0-9]{64})$/);
   return match ? (
     <ClarificationReply key={match[1]} token={match[1]} api={api} />

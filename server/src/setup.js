@@ -65,6 +65,40 @@ try {
     FOREIGN KEY(case_id) REFERENCES cases(id),
     FOREIGN KEY(created_by) REFERENCES users(id)
   )`);
+  const [newStatus] = await db.query(
+    "SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='cases' AND COLUMN_NAME='status'",
+  );
+  if (!newStatus[0].COLUMN_TYPE.includes("'En seguimiento judicial'"))
+    await db.query(
+      "ALTER TABLE cases MODIFY status ENUM('Nuevo','En evaluación','Pendiente de aclaración','En seguimiento judicial','Atención inicial cerrada') NOT NULL DEFAULT 'Nuevo'",
+    );
+  await db.query(`CREATE TABLE IF NOT EXISTS evaluations (
+    case_id INT PRIMARY KEY,
+    notes TEXT NOT NULL,
+    reply_type ENUM('Respuesta','Propuesta','Cotización') NOT NULL,
+    reply_text TEXT NOT NULL,
+    amount DECIMAL(10,2) NULL,
+    decision ENUM('judicial','close') NOT NULL,
+    revision INT NOT NULL,
+    updated_by INT NOT NULL,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    approved_by INT NULL,
+    approved_at DATETIME NULL,
+    FOREIGN KEY(case_id) REFERENCES cases(id),
+    FOREIGN KEY(updated_by) REFERENCES users(id),
+    FOREIGN KEY(approved_by) REFERENCES users(id)
+  )`);
+  await db.query(`CREATE TABLE IF NOT EXISTS response_links (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin UNIQUE NOT NULL,
+    expires_at DATETIME NOT NULL,
+    revoked_at DATETIME NULL,
+    created_by INT NOT NULL,
+    FOREIGN KEY(case_id) REFERENCES cases(id),
+    FOREIGN KEY(created_by) REFERENCES users(id),
+    INDEX(case_id)
+  )`);
   console.log(
     "Esquema MySQL listo (Laboral, documentos y aclaraciones; conserva casos existentes).",
   );

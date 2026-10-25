@@ -886,3 +886,5 @@ td small {
 }
 
 .clarification-form{padding:20px 0}.clarification-form .primary{margin-top:18px}.link-notice{display:block}.link-notice label{margin-top:16px}.link-notice p{font-size:11px;line-height:1.8;margin-top:14px}.clarification-history{border-top:1px solid #dfe8e1;padding:22px 0}.reply-page{min-height:100vh;padding:40px 20px}.reply-card{max-width:700px;margin:0 auto;padding:30px}.reply-card form{padding:20px 0 0}.reply-questions{padding:20px;background:#edf4ee;border-radius:6px;margin:20px 0}.reply-card h3{margin-top:24px}
+
+.evaluation-form{padding:20px 0}.evaluation-form>label,.evaluation-form>.fields{margin-bottom:22px}.evaluation-meta{display:flex;gap:14px;align-items:center;margin:20px 0;font-size:11px;color:#718579;flex-wrap:wrap}.evaluation-preview{padding:22px;border:1px solid #dce8df;border-radius:8px;background:#f3f8f4;margin:22px 0}.evaluation-preview h3{margin-bottom:18px}.evaluation-preview .analysis-text{margin:16px 0}.evaluation-approval{border-top:1px solid #dfe8e1;margin-top:22px;padding-top:6px}

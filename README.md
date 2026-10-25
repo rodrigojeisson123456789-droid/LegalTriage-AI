@@ -120,3 +120,19 @@ Prueba local: crear una solicitud, copiar el enlace, abrirlo en una ventana priv
 Endpoints: públicos `POST /api/clarifications/access` y `POST /api/clarifications/answer` (token por cuerpo); privados `GET/POST /api/cases/:id/clarifications` y `DELETE /api/cases/:id/clarifications/:requestId`. `PATCH /api/cases/:id` admite corrección manual de especialidad.
 
 Desde `server/`, `node scripts/clarifications-smoke.js` prueba con MySQL real permisos, clasificación Laboral/manual, sustitución, vencimiento, cancelación, respuesta única concurrente y conservación del mismo caso, y elimina sus datos de prueba. Usa temporalmente el puerto 3002. No contacta Gemini.
+
+## Evaluación del abogado, respuesta y decisión
+
+En **Consultas → Evaluación y respuesta**, el equipo registra conclusiones internas y redacta una Respuesta, Propuesta o Cotización. El importe opcional está en soles (PEN); para Cotización es obligatorio. Guardar un borrador no aprueba ni envía nada. Incluye vista previa del texto que podrá leer el cliente y control de revisión para evitar sobrescribir cambios de otro usuario: ante un conflicto, cerrar descartando cambios locales y volver a abrir para recuperar la versión guardada.
+
+Después de revisar los antecedentes, el abogado elige expresamente **seguimiento judicial** o **cierre de atención inicial**, guarda y confirma la aprobación. Se registran el usuario aprobador y la fecha; la evaluación queda bloqueada y esta versión no permite corregirla ni reabrirla. No hay sugerencias de conclusiones automáticas ni envío de notas internas a Gemini. Todos los usuarios internos conservan los mismos permisos actuales: todavía no hay roles diferenciados de abogado y soporte.
+
+La aprobación se bloquea si hay aclaraciones vigentes sin responder. El cierre se bloquea si existen plazos futuros, y una atención cerrada no acepta nuevos plazos ni nuevas aclaraciones. El estado **En seguimiento judicial** permite registrar plazos mediante el botón correspondiente con el caso preseleccionado. Cerrar la atención inicial no declara concluido un proceso judicial ni silencia sus plazos; esta versión no incluye una operación posterior de cierre judicial.
+
+Tras aprobar, **Crear enlace de respuesta aprobada** genera un enlace privado de lectura durante 30 días. Se muestra solo una vez y debe copiarse para compartirlo manualmente; no envía correo ni WhatsApp. Muestra únicamente tipo de respuesta, texto aprobado, importe y fecha de aprobación; excluye notas internas, DNI y expediente. No implica contratación, aceptación del cliente ni pago. El token se guarda como hash, se envía por cuerpo al API, puede revocarse y se reemplaza al crear otro enlace. Un enlace localhost solo sirve en la laptop local; requiere despliegue HTTPS para clientes externos.
+
+Para actualizar: detener `npm run dev`, ejecutar `git pull origin main`, `npm ci`, `npm run db:init` y `npm run dev`. La migración amplía estados y crea `evaluations` y `response_links` sin borrar registros. Incluye un único borrador revisable y la aprobación final; no conserva versiones históricas de cada edición del borrador.
+
+API privada: `GET/PUT /api/cases/:id/evaluation`, `POST /api/cases/:id/evaluation/approve`, `POST/DELETE /api/cases/:id/evaluation/share`. Acceso público mediante token: `POST /api/responses/access`. El registro de plazos y la aprobación usan el mismo bloqueo transaccional del caso para evitar cierres concurrentes con nuevos plazos.
+
+Prueba: desde `server/`, `node scripts/evaluations-smoke.js` usa MySQL real y una API temporal en 3002 para validar permisos, conflictos, aprobación única, bloqueo por aclaraciones/plazos y privacidad/revocación/vencimiento de enlaces. Crea y elimina únicamente sus propios datos de prueba; no llama a Gemini.

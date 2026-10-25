@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { evaluations, publicResponses } from "./evaluations.js";
 import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
@@ -31,7 +32,7 @@ if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)
   throw new Error("JWT_SECRET requiere al menos 32 caracteres");
 const app = express();
 app.use(helmet());
-app.use(express.json({ limit: "32kb" }));
+app.use(express.json({ limit: "96kb" }));
 app.use(cookieParser());
 app.use("/api", (req, res, next) => {
   if (
@@ -131,6 +132,7 @@ app.post(
   },
 );
 app.use("/api/clarifications", publicClarifications);
+app.use("/api/responses", publicResponses);
 app.post("/api/login", limited, async (req, res) => {
   const { email, password } = z
     .object({ email: z.string().email(), password: z.string().min(1).max(200) })
@@ -174,6 +176,7 @@ app.use("/api", (req, res, next) => {
   }
 });
 app.use("/api/cases", privateClarifications);
+app.use("/api/cases", evaluations);
 app.get("/api/me", (req, res) =>
   res.json({ id: req.user.id, name: req.user.name }),
 );
@@ -286,16 +289,28 @@ app.patch("/api/cases/:id", async (req, res) => {
       return res.status(400).json({ error: "Abogado no encontrado" });
   }
   const [result] = await db.execute(
-    "UPDATE cases SET status=COALESCE(?,status),lawyer_id=COALESCE(?,lawyer_id),specialty=COALESCE(?,specialty),classification_status=IF(? IS NULL,classification_status,'manual') WHERE id=?",
+    "UPDATE cases SET status=COALESCE(?,status),lawyer_id=COALESCE(?,lawyer_id),specialty=COALESCE(?,specialty),classification_status=IF(? IS NULL,classification_status,'manual') WHERE id=? AND (? IS NULL OR status NOT IN ('En seguimiento judicial','Atención inicial cerrada'))",
     [
       input.status || null,
       input.lawyer_id || null,
       input.specialty || null,
       input.specialty || null,
       id,
+      input.status || null,
     ],
   );
-  if (!result.affectedRows) return res.sendStatus(404);
+  if (!result.affectedRows) {
+    const [existing] = await db.execute("SELECT id FROM cases WHERE id=?", [
+      id,
+    ]);
+    return res
+      .status(existing.length ? 409 : 404)
+      .json({
+        error: existing.length
+          ? "No se puede reabrir un caso con evaluación aprobada."
+          : "Caso no encontrado",
+      });
+  }
   res.sendStatus(204);
 });
 app.get("/api/deadlines", async (req, res) => {
@@ -305,17 +320,38 @@ app.get("/api/deadlines", async (req, res) => {
   res.json(rows.map((row) => ({ ...row, urgency: urgency(row.due_at) })));
 });
 app.post("/api/deadlines", async (req, res) => {
-  const input = deadlineSchema.parse(req.body);
-  const [cases] = await db.execute("SELECT id FROM cases WHERE id=?", [
-    input.case_id,
-  ]);
-  if (!cases.length)
-    return res.status(404).json({ error: "Caso no encontrado" });
-  const [result] = await db.execute(
-    "INSERT INTO deadlines (case_id,title,due_at,created_by) VALUES (?,?,?,?)",
-    [input.case_id, input.title, new Date(input.due_at), req.user.id],
-  );
-  res.status(201).json({ id: result.insertId });
+  const input = deadlineSchema.parse(req.body),
+    connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [cases] = await connection.execute(
+      "SELECT status FROM cases WHERE id=? FOR UPDATE",
+      [input.case_id],
+    );
+    if (!cases.length) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Caso no encontrado" });
+    }
+    if (cases[0].status === "Atención inicial cerrada") {
+      await connection.rollback();
+      return res
+        .status(409)
+        .json({
+          error: "No se puede registrar un plazo en una atención cerrada.",
+        });
+    }
+    const [result] = await connection.execute(
+      "INSERT INTO deadlines (case_id,title,due_at,created_by) VALUES (?,?,?,?)",
+      [input.case_id, input.title, new Date(input.due_at), req.user.id],
+    );
+    await connection.commit();
+    res.status(201).json({ id: result.insertId });
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 });
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError)

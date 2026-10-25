@@ -107,12 +107,25 @@ privateClarifications.post("/:id/clarifications", async (req, res) => {
   try {
     await connection.beginTransaction();
     const [cases] = await connection.execute(
-      "SELECT id FROM cases WHERE id=? FOR UPDATE",
+      "SELECT id,status FROM cases WHERE id=? FOR UPDATE",
       [id],
     );
     if (!cases.length) {
       await connection.rollback();
       return res.status(404).json({ error: "Caso no encontrado" });
+    }
+    if (
+      ["En seguimiento judicial", "Atención inicial cerrada"].includes(
+        cases[0].status,
+      )
+    ) {
+      await connection.rollback();
+      return res
+        .status(409)
+        .json({
+          error:
+            "La evaluación ya fue aprobada. No se pueden abrir nuevas aclaraciones en esta etapa.",
+        });
     }
     await connection.execute(
       "UPDATE clarifications SET cancelled_at=UTC_TIMESTAMP() WHERE case_id=? AND answer IS NULL AND cancelled_at IS NULL",
