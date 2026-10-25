@@ -11,7 +11,8 @@
     "test": "npm test -w server",
     "db:init": "npm run db:init -w server",
     "user:create": "npm run user:create -w server",
-    "gemini:check": "npm run gemini:check -w server"
+    "gemini:check": "npm run gemini:check -w server",
+    "gemini:models": "npm run gemini:models -w server"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
