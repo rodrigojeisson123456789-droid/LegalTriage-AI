@@ -1,0 +1,1 @@
+{"name":"legaltriage-ai","private":true,"workspaces":["server","client"],"scripts":{"dev":"concurrently -k \"npm run dev -w server\" \"npm run dev -w client\"","build":"npm run build -w client","test":"npm test -w server","db:init":"npm run db:init -w server","user:create":"npm run user:create -w server"},"devDependencies":{"concurrently":"^9.1.2"}}

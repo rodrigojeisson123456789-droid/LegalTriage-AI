@@ -1,0 +1,1 @@
+{"name":"client","private":true,"type":"module","scripts":{"dev":"vite --host 0.0.0.0","build":"vite build"},"dependencies":{"@tailwindcss/vite":"^4.3.3","lucide-react":"^0.468.0","react":"^19.0.0","react-dom":"^19.0.0","tailwindcss":"^4.3.3"},"devDependencies":{"vite":"^6.2.0"}}
