@@ -1,0 +1,1 @@
+History smoke OK: actores, acciones reales, permisos por caso/rol, metadatos sin secretos ni notas, sin edición API, rollback y paginación.

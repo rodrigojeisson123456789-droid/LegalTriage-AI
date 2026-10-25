@@ -1,0 +1,1 @@
+Assignment smoke OK: configuración y permisos, asignación pública con Gemini simulado, menor carga, empate, concurrencia, cierre excluido, disponibilidad, Indeterminado/fallo y cambio manual.

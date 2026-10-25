@@ -1,0 +1,1 @@
+Versions smoke OK: evaluaciones y análisis originales/revisados/aprobados, lectura sin alterar actual, fallos/conflictos sin versiones falsas, permisos, aislamiento y migración repetible con contenido vigente preservado.

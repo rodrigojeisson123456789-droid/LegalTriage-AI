@@ -1,0 +1,56 @@
+[
+  {
+    "prueba": "documents",
+    "estado": "APROBADA",
+    "duracion_ms": 1519,
+    "codigo": 0
+  },
+  {
+    "prueba": "clarifications",
+    "estado": "APROBADA",
+    "duracion_ms": 1641,
+    "codigo": 0
+  },
+  {
+    "prueba": "evaluations",
+    "estado": "APROBADA",
+    "duracion_ms": 1534,
+    "codigo": 0
+  },
+  {
+    "prueba": "assignment",
+    "estado": "APROBADA",
+    "duracion_ms": 2172,
+    "codigo": 0
+  },
+  {
+    "prueba": "mail",
+    "estado": "APROBADA",
+    "duracion_ms": 4041,
+    "codigo": 0
+  },
+  {
+    "prueba": "roles",
+    "estado": "APROBADA",
+    "duracion_ms": 4075,
+    "codigo": 0
+  },
+  {
+    "prueba": "password",
+    "estado": "APROBADA",
+    "duracion_ms": 6514,
+    "codigo": 0
+  },
+  {
+    "prueba": "history",
+    "estado": "APROBADA",
+    "duracion_ms": 2685,
+    "codigo": 0
+  },
+  {
+    "prueba": "versions",
+    "estado": "APROBADA",
+    "duracion_ms": 3736,
+    "codigo": 0
+  }
+]

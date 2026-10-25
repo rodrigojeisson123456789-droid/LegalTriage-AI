@@ -1,0 +1,1 @@
+Mail smoke OK: preview sin SMTP ni registro, permisos, destinatario del caso, enlace vigente, Gmail simulado, duplicado bloqueado, respuesta aprobada y notas privadas excluidas.

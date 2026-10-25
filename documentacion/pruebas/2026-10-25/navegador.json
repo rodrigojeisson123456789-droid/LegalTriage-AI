@@ -1,0 +1,86 @@
+{
+  "gemini": "simulado",
+  "smtp": "simulado",
+  "mysql": "real",
+  "limpieza": true,
+  "errores_js": [],
+  "resultados": [
+    {
+      "id": "UI-01",
+      "prueba": "Recepción de consulta y PDF",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/01-recepcion.png",
+      "detalle": "Formulario real del navegador; PDF generado para esta prueba, persistido en MySQL."
+    },
+    {
+      "id": "UI-02",
+      "prueba": "Clasificación y asignación automática",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/02-asignacion.png",
+      "detalle": "Respuesta Gemini simulada Laboral; algoritmo real asignó la abogada disponible."
+    },
+    {
+      "id": "UI-03",
+      "prueba": "Visualización del análisis documental",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/03-analisis-inicial.png",
+      "detalle": "Resumen, hallazgos con página, fechas y advertencias mostrados; contenido Gemini simulado."
+    },
+    {
+      "id": "UI-04",
+      "prueba": "Aclaración y notificación",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/04-aclaracion-correo.png",
+      "detalle": "Solicitud real registrada y envío aceptado por SMTP simulado. Enlace oculto en captura; no hubo correo real."
+    },
+    {
+      "id": "UI-05",
+      "prueba": "Respuesta del cliente y retorno a evaluación",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/05-respuesta-cliente-movil.png",
+      "detalle": "Respuesta privada guardada en el mismo caso; vista de 390 px sin desbordamiento horizontal."
+    },
+    {
+      "id": "UI-06",
+      "prueba": "Consulta de dos versiones de evaluación",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/06-evaluaciones-versiones.png",
+      "detalle": "Guardados desde la interfaz; cada revisión mantiene sus fundamentos y respuesta. Solo lectura."
+    },
+    {
+      "id": "UI-07",
+      "prueba": "Consulta de dos versiones de análisis Gemini",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/07-analisis-versiones.png",
+      "detalle": "Dos respuestas simuladas distintas; ambas copias siguen disponibles después de reanalizar."
+    },
+    {
+      "id": "UI-08",
+      "prueba": "Aprobación y notificación de respuesta",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/08-aprobacion-notificacion.png",
+      "detalle": "Evaluación bloqueada tras aprobación; registro real de aceptación SMTP simulada, sin entrega a Gmail real."
+    },
+    {
+      "id": "UI-09",
+      "prueba": "Respuesta privada final y cierre",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/09-respuesta-final-movil.png",
+      "detalle": "Cliente ve respuesta e importe aprobados, sin notas internas; caso queda cerrado."
+    },
+    {
+      "id": "UI-10",
+      "prueba": "Permisos de Soporte y abogado no asignado",
+      "resultado": "APROBADA",
+      "evidencia": "evidencias/10-permisos-soporte.png",
+      "detalle": "Soporte no ve evaluaciones ni sus versiones; otro abogado no ve el caso."
+    },
+    {
+      "id": "UI-11",
+      "prueba": "Errores JavaScript del recorrido",
+      "resultado": "APROBADA",
+      "evidencia": null,
+      "detalle": "Cero excepciones pageerror en las páginas del recorrido. Recursos externos del navegador bloqueados."
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+Clarifications smoke OK: Laboral/manual, permisos, historial, enlace hash, reemplazo, vencimiento, consentimiento, respuesta única concurrente, contexto y mismo caso.

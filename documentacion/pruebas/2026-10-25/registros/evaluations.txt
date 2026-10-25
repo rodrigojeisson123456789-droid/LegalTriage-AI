@@ -1,0 +1,1 @@
+Evaluations smoke OK: permisos, borradores, conflictos, aprobación única, aclaraciones/plazos, estados, bloqueo, privacidad de notas y enlaces reemplazados/vencidos/revocados.

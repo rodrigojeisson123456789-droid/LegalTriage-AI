@@ -1,0 +1,11 @@
+UI-01 APROBADA: Recepción de consulta y PDF
+UI-02 APROBADA: Clasificación y asignación automática
+UI-03 APROBADA: Visualización del análisis documental
+UI-04 APROBADA: Aclaración y notificación
+UI-05 APROBADA: Respuesta del cliente y retorno a evaluación
+UI-06 APROBADA: Consulta de dos versiones de evaluación
+UI-07 APROBADA: Consulta de dos versiones de análisis Gemini
+UI-08 APROBADA: Aprobación y notificación de respuesta
+UI-09 APROBADA: Respuesta privada final y cierre
+UI-10 APROBADA: Permisos de Soporte y abogado no asignado
+UI-11 APROBADA: Errores JavaScript del recorrido

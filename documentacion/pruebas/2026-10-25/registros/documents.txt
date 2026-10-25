@@ -1,0 +1,1 @@
+Document smoke OK: PDF íntegro, acceso privado, descarga, reintento, análisis previo conservado, rechazo de formato/tamaño/consentimiento/múltiples archivos y sin registros parciales.

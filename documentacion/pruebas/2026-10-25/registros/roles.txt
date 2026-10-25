@@ -1,0 +1,1 @@
+Roles smoke OK: cuentas, rol vivo por petición, Gerencia/Soporte/Abogado, casos y archivos ajenos, notas internas, plazos, reasignación, restricciones de perfil y contraseñas cifradas.

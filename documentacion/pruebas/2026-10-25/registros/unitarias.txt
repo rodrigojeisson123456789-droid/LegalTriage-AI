@@ -1,0 +1,48 @@
+
+> test
+> npm test -w server
+
+
+> test
+> node --test
+
+✔ roles: Gerencia administra, Soporte tramita y Abogado evalúa sin reasignar (1.531311ms)
+✔ disponibilidad requiere especialidades válidas, distintas y explícitas (3.419801ms)
+✔ valida PDF por contenido, limita páginas y sanea nombre (32.64947ms)
+✔ rechaza vacíos, sobredimensionados, ejecutables y PDF corrupto (1.357032ms)
+✔ admite PNG por firma sin confiar en extensión ni MIME del cliente (1.683336ms)
+✔ análisis envía archivo y consulta y valida referencias, sin crear plazos (12.015285ms)
+✔ sin clave no contacta Gemini (0.239685ms)
+✔ diagnósticos distinguen errores de Google, red, timeout y respuestas bloqueadas (2.025263ms)
+✔ plazos: vencido, 24h y 48h inclusivos (0.751665ms)
+✔ consulta: valida documento, consentimiento y texto (2.003631ms)
+✔ plazo requiere fecha futura con zona horaria (1.324845ms)
+✔ Gemini valida categoría y conserva caso cuando falla (0.685497ms)
+✔ Gemini puede clasificar una consulta laboral (0.278132ms)
+✔ evaluación exige fundamentos, respuesta, decisión e importe válido para cotización (6.757199ms)
+✔ historial limita metadatos y rechaza texto privado, secretos y acciones desconocidas (7.419481ms)
+✔ correo inicia en preview, no expone secretos en el mensaje y valida origen (3.514081ms)
+✔ correo exige HTTPS externo y rechaza rutas/credenciales de origen (0.651647ms)
+✔ errores SMTP muestran diagnósticos conocidos sin revelar respuestas ni credenciales (0.164934ms)
+✔ restablecer exige confirmación, mínimo seguro y permisos de Gerencia (3.575421ms)
+✔ se admiten 8 caracteres sin reglas de mayúsculas/números y el cambio propio exige contraseña actual (1.509218ms)
+✔ las respuestas tardías de una cuenta no sobrescriben datos ni errores de la siguiente (0.958812ms)
+✔ versiones validan contenido estructurado y excluyen credenciales y campos ajenos (4.868408ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 853.113749
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+npm notice To update run: npm install -g npm@12.2.1
+npm notice
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+npm notice To update run: npm install -g npm@12.2.1
+npm notice
