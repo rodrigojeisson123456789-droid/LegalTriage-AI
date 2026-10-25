@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Scale,
@@ -16,6 +16,7 @@ import {
   BriefcaseBusiness,
 } from "lucide-react";
 import "./style.css";
+import { SessionRequests } from "./session.js";
 import { ClarificationManager, ClarificationReply } from "./Clarifications.jsx";
 import Evaluation, { ClientResponse } from "./Evaluation.jsx";
 import Team from "./Team.jsx";
@@ -33,7 +34,10 @@ async function api(path, options = {}) {
   });
   if (!r.ok) {
     const d = await r.json().catch(() => ({}));
-    throw new Error(d.error || "No se pudo conectar con el servidor");
+    const error = new Error(d.error || "No se pudo conectar con el servidor");
+    error.status = r.status;
+    error.path = path;
+    throw error;
   }
   return r.status === 204 ? null : r.json();
 }
@@ -44,12 +48,15 @@ const date = (v) =>
     timeZone: "America/Lima",
   }).format(new Date(v));
 function App() {
+  const sessionRequests = useRef(new SessionRequests());
+  const identity = useRef(null);
   const [view, setView] = useState("public"),
     [user, setUser] = useState(null),
     [cases, setCases] = useState([]),
     [deadlines, setDeadlines] = useState([]),
     [users, setUsers] = useState([]),
     [error, setError] = useState(""),
+    [sessionNotice, setSessionNotice] = useState(""),
     [busy, setBusy] = useState(false),
     [receipt, setReceipt] = useState(null),
     [search, setSearch] = useState(""),
@@ -59,51 +66,117 @@ function App() {
     [evaluationCase, setEvaluationCase] = useState(null),
     [deadlineCase, setDeadlineCase] = useState(null),
     [attachmentName, setAttachmentName] = useState("");
+  function replaceSession(nextUser) {
+    sessionRequests.current.invalidate();
+    identity.current = nextUser;
+    setUser(nextUser);
+    setCases([]);
+    setDeadlines([]);
+    setUsers([]);
+    setSearch("");
+    setDeadlineCase(null);
+    setDocumentCase(null);
+    setClarificationCase(null);
+    setEvaluationCase(null);
+    setModal(false);
+    setError("");
+    setSessionNotice("");
+    setBusy(false);
+  }
+  function expiredSession() {
+    replaceSession(null);
+    setView("login");
+    setError("Tu sesión terminó. Vuelve a iniciar sesión.");
+  }
   async function load() {
-    const [c, d, u, me] = await Promise.all([
-      api("/cases"),
-      api("/deadlines"),
-      api("/users"),
-      api("/me"),
-    ]);
-    setCases(c);
-    setDeadlines(d);
-    setUsers(u);
-    setUser((previous) =>
-      previous?.role === me.role && previous?.name === me.name ? previous : me,
-    );
+    if (!identity.current) return;
+    const request = sessionRequests.current.start();
+    try {
+      const [c, d, u, me] = await Promise.all([
+        api("/cases", { signal: request.signal }),
+        api("/deadlines", { signal: request.signal }),
+        api("/users", { signal: request.signal }),
+        api("/me", { signal: request.signal }),
+      ]);
+      if (!request.isCurrent()) return;
+      if (
+        me.id !== identity.current?.id ||
+        me.role !== identity.current?.role
+      ) {
+        replaceSession(me);
+        setView("dashboard");
+        return;
+      }
+      setCases(c);
+      setDeadlines(d);
+      setUsers(u);
+      identity.current = me;
+      setUser((previous) =>
+        previous?.id === me.id &&
+        previous?.role === me.role &&
+        previous?.name === me.name
+          ? previous
+          : me,
+      );
+    } catch (e) {
+      if (!request.isCurrent() || e.name === "AbortError") return;
+      if (e.status === 401) {
+        expiredSession();
+        return;
+      }
+      throw e;
+    } finally {
+      request.finish();
+    }
   }
   useEffect(() => {
-    api("/me")
-      .then(setUser)
-      .catch(() => {});
+    const request = sessionRequests.current.start();
+    api("/me", { signal: request.signal })
+      .then((me) => {
+        if (request.isCurrent()) {
+          identity.current = me;
+          setUser(me);
+        }
+      })
+      .catch(() => {})
+      .finally(() => request.finish());
+    return () => request.cancel();
   }, []);
   useEffect(() => {
-    if (user) {
-      load().catch((e) => setError(e.message));
-      const timer = setInterval(
-        () => load().catch((e) => setError(e.message)),
-        60000,
-      );
-      return () => clearInterval(timer);
-    }
+    if (!user) return;
+    let active = true;
+    const refresh = () =>
+      load().catch((e) => {
+        if (active) setError(e.message);
+      });
+    refresh();
+    const timer = setInterval(refresh, 60000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+    };
   }, [user?.id, user?.role]);
   useEffect(() => {
     if (user?.role !== "gerencia" && view === "team") setView("dashboard");
   }, [user?.role, view]);
   async function act(fn) {
+    const version = sessionRequests.current.version;
     setBusy(true);
     setError("");
     try {
       await fn();
     } catch (e) {
-      setError(e.message);
+      if (version === sessionRequests.current.version) {
+        if (e.status === 401 && e.path !== "/login") expiredSession();
+        else if (e.name !== "AbortError") setError(e.message);
+      }
     } finally {
-      setBusy(false);
+      if (version === sessionRequests.current.version) setBusy(false);
     }
   }
   function change(v) {
     setError("");
+    setSessionNotice("");
     setView(v);
   }
   const input = (label, name, type = "text", extra = {}) => (
@@ -184,21 +257,16 @@ function App() {
             </span>
           </div>
           <button
-            onClick={() =>
-              user
-                ? act(async () => {
-                    await api("/logout", { method: "POST" });
-                    setUser(null);
-                    setCases([]);
-                    setDeadlines([]);
-                    setUsers([]);
-                    setDocumentCase(null);
-                    setClarificationCase(null);
-                    setEvaluationCase(null);
-                    change("public");
-                  })
-                : change("login")
-            }
+            disabled={busy}
+            onClick={() => {
+              if (user) {
+                replaceSession(null);
+                change("public");
+                act(async () => {
+                  await api("/logout", { method: "POST" });
+                });
+              } else change("login");
+            }}
           >
             {user ? <LogOut size={16} /> : <BriefcaseBusiness size={16} />}{" "}
             {user
@@ -230,6 +298,11 @@ function App() {
           </span>
         </header>
         <main>
+          {sessionNotice && (
+            <div className="notice" role="status">
+              {sessionNotice}
+            </div>
+          )}
           {error && (
             <div className="error" role="alert">
               {error}
@@ -473,8 +546,9 @@ function App() {
                   const data = Object.fromEntries(
                     new FormData(e.currentTarget),
                   );
+                  replaceSession(null);
                   act(async () => {
-                    setUser(
+                    replaceSession(
                       await api("/login", {
                         method: "POST",
                         body: JSON.stringify(data),
@@ -492,7 +566,19 @@ function App() {
               </form>
             </section>
           )}
-          {user && view === "account" && <Account api={api} user={user} />}
+          {user && view === "account" && (
+            <Account
+              api={api}
+              user={user}
+              onPasswordChanged={() => {
+                replaceSession(null);
+                setView("login");
+                setSessionNotice(
+                  "Contraseña actualizada. Inicia sesión con tu nueva clave.",
+                );
+              }}
+            />
+          )}
           {user && canManage && view === "team" && (
             <Team api={api} user={user} />
           )}

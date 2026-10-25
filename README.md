@@ -220,3 +220,9 @@ Desde `server/`, `node scripts/password-smoke.js` valida permisos, confirmación
 La política actual admite de 8 a 72 caracteres (máximo 72 bytes UTF-8 por bcrypt), sin exigir mayúsculas, números ni símbolos. Se aplica a creación de cuentas, CLI, restablecimiento de Gerencia y cambio personal. Las contraseñas existentes siguen funcionando y no se acortan automáticamente.
 
 Cada rol dispone de **Mi cuenta**, donde introduce su contraseña actual, elige y repite la nueva, y puede mostrar los campos mientras escribe. `PUT /api/me/password` utiliza exclusivamente la identidad autenticada, valida la contraseña actual y revoca las sesiones previas al guardar. Después se debe iniciar sesión otra vez. Si olvidó la contraseña actual, Gerencia debe restablecerla desde Equipo. No hay registro público ni envío de contraseñas por correo.
+
+### Sesión del navegador y respuestas tardías
+
+Al iniciar/cerrar sesión o cambiar de cuenta, la interfaz cancela las cargas anteriores y descarta resultados de su generación, aunque la respuesta ya estuviera en camino. La comprobación inicial de sesión tampoco puede restaurar una cuenta después de otro login. Una respuesta 401 vigente elimina los datos privados y vuelve al formulario de acceso; una respuesta antigua no muestra alertas en la cuenta nueva. Las credenciales incorrectas siguen mostrando su error y no se confunden con vencimiento de sesión.
+
+Después de cambiar la contraseña desde Mi cuenta, se vuelve al login con un aviso de éxito y se detiene la actualización de la sesión anterior. `npm test` incluye una prueba de aislamiento entre solicitudes de cuentas diferentes. Se comprobó en navegador el caso de 401 retrasado tras otro login, credenciales erróneas, cambio de contraseña y vencimiento real. Para usar dos cuentas simultáneas, utilizar perfiles de navegador separados o una ventana privada: las pestañas normales comparten la cookie de sesión.

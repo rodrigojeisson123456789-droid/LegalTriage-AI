@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-export default function Account({ api, user }) {
+export default function Account({ api, user, onPasswordChanged }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [done, setDone] = useState(false),
@@ -58,6 +58,7 @@ export default function Account({ api, user }) {
               form.reset();
               setShow(false);
               setDone(true);
+              onPasswordChanged?.();
             } catch (e) {
               setError(e.message);
             } finally {
