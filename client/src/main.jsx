@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Scale,
+  Users,
   LayoutDashboard,
   Clock3,
   ArrowUpRight,
@@ -16,6 +17,7 @@ import {
 import "./style.css";
 import { ClarificationManager, ClarificationReply } from "./Clarifications.jsx";
 import Evaluation, { ClientResponse } from "./Evaluation.jsx";
+import Team from "./Team.jsx";
 import DocumentReview from "./DocumentReview.jsx";
 async function api(path, options = {}) {
   const r = await fetch("/api" + path, {
@@ -145,6 +147,12 @@ function App() {
             <Clock3 size={18} /> Control de plazos{" "}
             {user && alerts.length > 0 && <span>{alerts.length}</span>}
           </button>
+          <button
+            className={view === "team" ? "active" : ""}
+            onClick={() => change(user ? "team" : "login")}
+          >
+            <Users size={18} /> Equipo
+          </button>
         </nav>
         <div className="aside-bottom">
           <div className="secure">
@@ -186,7 +194,9 @@ function App() {
                   ? "Control de plazos"
                   : view === "login"
                     ? "Acceso privado"
-                    : "Panel de consultas"}
+                    : view === "team"
+                      ? "Equipo y especialidades"
+                      : "Panel de consultas"}
             </strong>
           </span>
           <span className="header-note">
@@ -456,6 +466,7 @@ function App() {
               </form>
             </section>
           )}
+          {user && view === "team" && <Team api={api} />}
           {user && view === "dashboard" && (
             <>
               <div className="eyebrow">GESTIÓN DEL ESTUDIO</div>
@@ -610,6 +621,28 @@ function App() {
                               )}
                             </td>
                             <td>
+                              {!c.lawyer_id && (
+                                <>
+                                  <small>Pendiente de asignación</small>
+                                  {c.status !== "Atención inicial cerrada" && (
+                                    <button
+                                      className="text-button"
+                                      disabled={busy}
+                                      onClick={() =>
+                                        act(async () => {
+                                          await api(
+                                            `/cases/${c.id}/auto-assign`,
+                                            { method: "POST" },
+                                          );
+                                          await load();
+                                        })
+                                      }
+                                    >
+                                      Asignar automáticamente
+                                    </button>
+                                  )}
+                                </>
+                              )}
                               <select
                                 aria-label={"Asignar abogado al caso " + c.id}
                                 value={c.lawyer_id || ""}

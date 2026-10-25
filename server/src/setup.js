@@ -99,6 +99,12 @@ try {
     FOREIGN KEY(created_by) REFERENCES users(id),
     INDEX(case_id)
   )`);
+  await db.query(
+    `CREATE TABLE IF NOT EXISTS lawyer_profiles (user_id INT PRIMARY KEY,available BOOLEAN NOT NULL DEFAULT FALSE,FOREIGN KEY(user_id) REFERENCES users(id))`,
+  );
+  await db.query(
+    `CREATE TABLE IF NOT EXISTS lawyer_specialties (user_id INT NOT NULL,specialty ENUM('Civil','Corporativo','Familia','Bancario','Laboral') NOT NULL,PRIMARY KEY(user_id,specialty),FOREIGN KEY(user_id) REFERENCES users(id))`,
+  );
   console.log(
     "Esquema MySQL listo (Laboral, documentos y aclaraciones; conserva casos existentes).",
   );

@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { assignment, autoAssign } from "./assignment.js";
 import { evaluations, publicResponses } from "./evaluations.js";
 import express from "express";
 import helmet from "helmet";
@@ -116,6 +117,7 @@ app.post(
             result.analysis ? new Date() : null,
           ],
         );
+      await autoAssign(connection, id);
       await connection.commit();
     } catch (error) {
       await connection.rollback();
@@ -177,6 +179,7 @@ app.use("/api", (req, res, next) => {
 });
 app.use("/api/cases", privateClarifications);
 app.use("/api/cases", evaluations);
+app.use("/api", assignment);
 app.get("/api/me", (req, res) =>
   res.json({ id: req.user.id, name: req.user.name }),
 );
@@ -262,6 +265,7 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
       "UPDATE cases SET specialty=?,classification_status=? WHERE id=?",
       [result.analysis.specialty, "classified", row.case_id],
     );
+    await autoAssign(connection, row.case_id);
     await connection.commit();
   } catch (error) {
     await connection.rollback();
@@ -303,13 +307,11 @@ app.patch("/api/cases/:id", async (req, res) => {
     const [existing] = await db.execute("SELECT id FROM cases WHERE id=?", [
       id,
     ]);
-    return res
-      .status(existing.length ? 409 : 404)
-      .json({
-        error: existing.length
-          ? "No se puede reabrir un caso con evaluación aprobada."
-          : "Caso no encontrado",
-      });
+    return res.status(existing.length ? 409 : 404).json({
+      error: existing.length
+        ? "No se puede reabrir un caso con evaluación aprobada."
+        : "Caso no encontrado",
+    });
   }
   res.sendStatus(204);
 });
@@ -334,11 +336,9 @@ app.post("/api/deadlines", async (req, res) => {
     }
     if (cases[0].status === "Atención inicial cerrada") {
       await connection.rollback();
-      return res
-        .status(409)
-        .json({
-          error: "No se puede registrar un plazo en una atención cerrada.",
-        });
+      return res.status(409).json({
+        error: "No se puede registrar un plazo en una atención cerrada.",
+      });
     }
     const [result] = await connection.execute(
       "INSERT INTO deadlines (case_id,title,due_at,created_by) VALUES (?,?,?,?)",
