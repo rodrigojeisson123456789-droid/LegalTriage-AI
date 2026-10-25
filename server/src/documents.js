@@ -2,6 +2,7 @@ import { fileTypeFromBuffer } from "file-type";
 import { PDFDocument } from "pdf-lib";
 import { z } from "zod";
 import { categories } from "./domain.js";
+import { GEMINI_REQUEST_TIMEOUT_MS } from "./gemini-settings.js";
 
 export const MAX_DOCUMENT_BYTES = 8 * 1024 * 1024;
 export class DocumentError extends Error {}
@@ -128,7 +129,7 @@ const analysisErrors = {
   response_blocked:
     "Gemini no devolvió contenido por un bloqueo o restricción. El documento queda disponible para revisión manual.",
   timeout:
-    "Gemini no respondió dentro de 45 segundos. Prueba más tarde o utiliza una copia más pequeña del documento.",
+    "Gemini no completó el análisis dentro de 2 minutos. El documento sigue guardado para revisión manual; puedes reintentar más tarde.",
   network_error:
     "No se pudo conectar con Gemini. Revisa Internet, el firewall y el acceso HTTPS a generativelanguage.googleapis.com.",
   provider_error:
@@ -172,7 +173,7 @@ export async function analyzeDocument(document, description, fetcher = fetch) {
           "Content-Type": "application/json",
           "x-goog-api-key": process.env.GEMINI_API_KEY,
         },
-        signal: AbortSignal.timeout(45000),
+        signal: AbortSignal.timeout(GEMINI_REQUEST_TIMEOUT_MS),
         body: JSON.stringify({
           systemInstruction: {
             parts: [

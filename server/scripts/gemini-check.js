@@ -8,11 +8,13 @@ pdf
   .drawText("Contrato de arrendamiento. Fecha de firma: 10 enero 2026.");
 const model=process.env.GEMINI_MODEL||'gemini-2.5-flash';
 if(/^[A-Za-z0-9._-]{1,120}$/.test(model))console.log(`Modelo efectivo: ${model}`);
-console.log("Comprobando Gemini con un PDF ficticio de una página…");
+console.log("Comprobando Gemini con un PDF ficticio de una página (hasta 2 minutos)…");
+const started=Date.now();
 const result = await analyzeDocument(
   { buffer: Buffer.from(await pdf.save()), mime: "application/pdf", pages: 1 },
   "Clasifica y resume este contrato ficticio para comprobar la conexión.",
 );
+console.log(`Duración total: ${Math.round((Date.now()-started)/1000)} s.`);
 if (result.status === "analyzed")
   console.log(
     "Conexión y análisis correctos. Ya puedes reintentar el documento guardado desde el panel.",

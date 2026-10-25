@@ -193,7 +193,7 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
                   : "Analizar con Gemini"}
             </button>
             <p className="help">
-              El análisis puede tardar hasta 45 segundos. Las referencias de la
+              El análisis puede tardar hasta 2 minutos. Las referencias de la
               IA también requieren comprobación.
             </p>
           </article>
