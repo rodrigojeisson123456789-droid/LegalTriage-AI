@@ -41,7 +41,7 @@ export async function autoAssign(connection, caseId) {
   await connection.query("SELECT id FROM users ORDER BY id FOR UPDATE");
   const [candidates] = await connection.execute(
     `SELECT u.id,COUNT(c.id) AS active_cases FROM users u
- JOIN lawyer_profiles p ON p.user_id=u.id AND p.available=1
+ JOIN lawyer_profiles p ON p.user_id=u.id AND p.available=1 AND u.role IN ('gerencia','abogado')
  JOIN lawyer_specialties s ON s.user_id=u.id AND s.specialty=?
  LEFT JOIN cases c ON c.lawyer_id=u.id AND c.status<>'Atención inicial cerrada'
  GROUP BY u.id ORDER BY active_cases ASC,u.id ASC LIMIT 1`,
@@ -57,23 +57,21 @@ export async function autoAssign(connection, caseId) {
 export const assignment = Router();
 assignment.get("/team", async (req, res) => {
   const [users] =
-    await db.query(`SELECT u.id,u.name,u.email,COALESCE(p.available,0) AS available,
+    await db.query(`SELECT u.id,u.name,u.email,u.role,COALESCE(p.available,0) AS available,
  (SELECT COUNT(*) FROM cases c WHERE c.lawyer_id=u.id AND c.status<>'Atención inicial cerrada') AS active_cases
  FROM users u LEFT JOIN lawyer_profiles p ON p.user_id=u.id ORDER BY u.name`);
   const [areas] = await db.query(
     "SELECT user_id,specialty FROM lawyer_specialties",
   );
-  res
-    .set("Cache-Control", "no-store")
-    .json(
-      users.map((u) => ({
-        ...u,
-        available: !!u.available,
-        specialties: areas
-          .filter((a) => a.user_id === u.id)
-          .map((a) => a.specialty),
-      })),
-    );
+  res.set("Cache-Control", "no-store").json(
+    users.map((u) => ({
+      ...u,
+      available: !!u.available,
+      specialties: areas
+        .filter((a) => a.user_id === u.id)
+        .map((a) => a.specialty),
+    })),
+  );
 });
 assignment.put("/team/:id", async (req, res) => {
   const id = z.coerce.number().int().positive().parse(req.params.id),
@@ -82,12 +80,21 @@ assignment.put("/team/:id", async (req, res) => {
   try {
     await connection.beginTransaction();
     const [users] = await connection.execute(
-      "SELECT id FROM users WHERE id=? FOR UPDATE",
+      "SELECT id,role FROM users WHERE id=? FOR UPDATE",
       [id],
     );
     if (!users.length) {
       await connection.rollback();
       return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    if (input.available && users[0].role === "soporte") {
+      await connection.rollback();
+      return res
+        .status(409)
+        .json({
+          error:
+            "Soporte no recibe asignaciones jurídicas. Cambia primero su rol a Abogado.",
+        });
     }
     await connection.execute(
       "INSERT INTO lawyer_profiles (user_id,available) VALUES (?,?) ON DUPLICATE KEY UPDATE available=VALUES(available)",

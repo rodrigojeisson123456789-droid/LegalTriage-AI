@@ -1,4 +1,11 @@
 import "dotenv/config";
+import {
+  authorize,
+  AccessError,
+  ensureCaseAccess,
+  guardCaseWrite,
+} from "./access.js";
+import { usersRouter } from "./users.js";
 import { notifications } from "./notifications.js";
 import { MailConfigError } from "./mail.js";
 import { assignment, autoAssign } from "./assignment.js";
@@ -159,7 +166,7 @@ app.post("/api/login", limited, async (req, res) => {
       maxAge: 8 * 3600000,
     },
   );
-  res.json({ id: user.id, name: user.name });
+  res.json({ id: user.id, name: user.name, role: user.role });
 });
 app.post("/api/logout", (req, res) => {
   res.clearCookie("session", {
@@ -169,30 +176,50 @@ app.post("/api/logout", (req, res) => {
   });
   res.sendStatus(204);
 });
-app.use("/api", (req, res, next) => {
+app.use("/api", async (req, res, next) => {
+  let claims;
   try {
-    req.user = jwt.verify(req.cookies.session, process.env.JWT_SECRET, {
+    claims = jwt.verify(req.cookies.session, process.env.JWT_SECRET, {
       algorithms: ["HS256"],
     });
-    next();
   } catch {
-    res.status(401).json({ error: "Inicia sesión para continuar" });
+    return res.status(401).json({ error: "Inicia sesión para continuar" });
   }
+  const [users] = await db.execute(
+    "SELECT id,name,role FROM users WHERE id=?",
+    [claims.id],
+  );
+  if (!users[0])
+    return res.status(401).json({ error: "La cuenta ya no está disponible." });
+  req.user = users[0];
+  next();
 });
+app.use("/api", authorize);
+app.use("/api", usersRouter);
 app.use("/api/cases", privateClarifications);
 app.use("/api/cases", evaluations);
 app.use("/api", assignment);
 app.use("/api", notifications);
 app.get("/api/me", (req, res) =>
-  res.json({ id: req.user.id, name: req.user.name }),
+  res.json({ id: req.user.id, name: req.user.name, role: req.user.role }),
 );
 app.get("/api/users", async (req, res) => {
-  const [rows] = await db.query("SELECT id,name FROM users ORDER BY name");
+  const [rows] =
+    req.user.role === "abogado"
+      ? await db.execute("SELECT id,name,role FROM users WHERE id=?", [
+          req.user.id,
+        ])
+      : await db.query(
+          "SELECT id,name,role FROM users WHERE role IN ('gerencia','abogado') ORDER BY name",
+        );
   res.json(rows);
 });
 app.get("/api/cases", async (req, res) => {
-  const [rows] = await db.query(
-    "SELECT c.*,u.name AS lawyer_name FROM cases c LEFT JOIN users u ON u.id=c.lawyer_id ORDER BY c.created_at DESC LIMIT 500",
+  const [rows] = await db.execute(
+    "SELECT c.*,u.name AS lawyer_name FROM cases c LEFT JOIN users u ON u.id=c.lawyer_id " +
+      (req.user.role === "abogado" ? "WHERE c.lawyer_id=? " : "") +
+      "ORDER BY c.created_at DESC LIMIT 500",
+    req.user.role === "abogado" ? [req.user.id] : [],
   );
   res.json(rows);
 });
@@ -260,6 +287,10 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+    await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+      row.case_id,
+    ]);
+    await guardCaseWrite(req, connection, row.case_id);
     await connection.execute(
       "UPDATE documents SET analysis_status=?,failure_reason=NULL,analysis=?,analyzed_at=? WHERE id=?",
       [result.status, JSON.stringify(result.analysis), new Date(), id],
@@ -288,39 +319,61 @@ app.patch("/api/cases/:id", async (req, res) => {
     })
     .refine((v) => Object.keys(v).length > 0)
     .parse(req.body);
-  if (input.lawyer_id) {
-    const [users] = await db.execute("SELECT id FROM users WHERE id=?", [
-      input.lawyer_id,
-    ]);
-    if (!users.length)
-      return res.status(400).json({ error: "Abogado no encontrado" });
-  }
-  const [result] = await db.execute(
-    "UPDATE cases SET status=COALESCE(?,status),lawyer_id=COALESCE(?,lawyer_id),specialty=COALESCE(?,specialty),classification_status=IF(? IS NULL,classification_status,'manual') WHERE id=? AND (? IS NULL OR status NOT IN ('En seguimiento judicial','Atención inicial cerrada'))",
-    [
-      input.status || null,
-      input.lawyer_id || null,
-      input.specialty || null,
-      input.specialty || null,
-      id,
-      input.status || null,
-    ],
-  );
-  if (!result.affectedRows) {
-    const [existing] = await db.execute("SELECT id FROM cases WHERE id=?", [
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
       id,
     ]);
-    return res.status(existing.length ? 409 : 404).json({
-      error: existing.length
-        ? "No se puede reabrir un caso con evaluación aprobada."
-        : "Caso no encontrado",
-    });
+    await guardCaseWrite(req, connection, id);
+    if (input.lawyer_id) {
+      const [users] = await connection.execute(
+        "SELECT id FROM users WHERE id=? AND role IN ('gerencia','abogado') FOR UPDATE",
+        [input.lawyer_id],
+      );
+      if (!users.length) {
+        await connection.rollback();
+        return res
+          .status(400)
+          .json({
+            error: "El responsable debe tener rol de Abogado o Gerencia.",
+          });
+      }
+    }
+    const [result] = await connection.execute(
+      "UPDATE cases SET status=COALESCE(?,status),lawyer_id=COALESCE(?,lawyer_id),specialty=COALESCE(?,specialty),classification_status=IF(? IS NULL,classification_status,'manual') WHERE id=? AND (? IS NULL OR status NOT IN ('En seguimiento judicial','Atención inicial cerrada'))",
+      [
+        input.status || null,
+        input.lawyer_id || null,
+        input.specialty || null,
+        input.specialty || null,
+        id,
+        input.status || null,
+      ],
+    );
+    if (!result.affectedRows) {
+      await connection.rollback();
+      return res
+        .status(409)
+        .json({
+          error: "No se puede reabrir un caso con evaluación aprobada.",
+        });
+    }
+    await connection.commit();
+    res.sendStatus(204);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
   }
-  res.sendStatus(204);
 });
 app.get("/api/deadlines", async (req, res) => {
-  const [rows] = await db.query(
-    "SELECT d.*,c.name AS client_name FROM deadlines d JOIN cases c ON c.id=d.case_id ORDER BY d.due_at LIMIT 500",
+  const [rows] = await db.execute(
+    "SELECT d.*,c.name AS client_name FROM deadlines d JOIN cases c ON c.id=d.case_id " +
+      (req.user.role === "abogado" ? "WHERE c.lawyer_id=? " : "") +
+      "ORDER BY d.due_at LIMIT 500",
+    req.user.role === "abogado" ? [req.user.id] : [],
   );
   res.json(rows.map((row) => ({ ...row, urgency: urgency(row.due_at) })));
 });
@@ -343,6 +396,7 @@ app.post("/api/deadlines", async (req, res) => {
         error: "No se puede registrar un plazo en una atención cerrada.",
       });
     }
+    await guardCaseWrite(req, connection, input.case_id);
     const [result] = await connection.execute(
       "INSERT INTO deadlines (case_id,title,due_at,created_by) VALUES (?,?,?,?)",
       [input.case_id, input.title, new Date(input.due_at), req.user.id],
@@ -357,6 +411,8 @@ app.post("/api/deadlines", async (req, res) => {
   }
 });
 app.use((err, req, res, next) => {
+  if (err instanceof AccessError)
+    return res.status(err.status).json({ error: err.message });
   if (err instanceof MailConfigError)
     return res.status(503).json({ error: err.message });
   if (err instanceof multer.MulterError)

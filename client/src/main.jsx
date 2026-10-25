@@ -58,14 +58,18 @@ function App() {
     [deadlineCase, setDeadlineCase] = useState(null),
     [attachmentName, setAttachmentName] = useState("");
   async function load() {
-    const [c, d, u] = await Promise.all([
+    const [c, d, u, me] = await Promise.all([
       api("/cases"),
       api("/deadlines"),
       api("/users"),
+      api("/me"),
     ]);
     setCases(c);
     setDeadlines(d);
     setUsers(u);
+    setUser((previous) =>
+      previous?.role === me.role && previous?.name === me.name ? previous : me,
+    );
   }
   useEffect(() => {
     api("/me")
@@ -81,7 +85,10 @@ function App() {
       );
       return () => clearInterval(timer);
     }
-  }, [user]);
+  }, [user?.id, user?.role]);
+  useEffect(() => {
+    if (user?.role !== "gerencia" && view === "team") setView("dashboard");
+  }, [user?.role, view]);
   async function act(fn) {
     setBusy(true);
     setError("");
@@ -103,6 +110,9 @@ function App() {
       <input name={name} type={type} required {...extra} />
     </label>
   );
+  const canManage = user?.role === "gerencia";
+  const canLegal = ["gerencia", "abogado"].includes(user?.role);
+  const canAssign = ["gerencia", "soporte"].includes(user?.role);
   const alerts = deadlines.filter(
     (d) => d.urgency === "Crítico" || d.urgency === "Próximo",
   );
@@ -147,12 +157,14 @@ function App() {
             <Clock3 size={18} /> Control de plazos{" "}
             {user && alerts.length > 0 && <span>{alerts.length}</span>}
           </button>
-          <button
-            className={view === "team" ? "active" : ""}
-            onClick={() => change(user ? "team" : "login")}
-          >
-            <Users size={18} /> Equipo
-          </button>
+          {canManage && (
+            <button
+              className={view === "team" ? "active" : ""}
+              onClick={() => change(user ? "team" : "login")}
+            >
+              <Users size={18} /> Equipo
+            </button>
+          )}
         </nav>
         <div className="aside-bottom">
           <div className="secure">
@@ -179,7 +191,9 @@ function App() {
             }
           >
             {user ? <LogOut size={16} /> : <BriefcaseBusiness size={16} />}{" "}
-            {user ? `${user.name} · Salir` : "Acceso del equipo"}
+            {user
+              ? `${user.name} · ${user.role === "gerencia" ? "Gerencia" : user.role === "abogado" ? "Abogado" : "Soporte"} · Salir`
+              : "Acceso del equipo"}
           </button>
         </div>
       </aside>
@@ -466,7 +480,9 @@ function App() {
               </form>
             </section>
           )}
-          {user && view === "team" && <Team api={api} />}
+          {user && canManage && view === "team" && (
+            <Team api={api} user={user} />
+          )}
           {user && view === "dashboard" && (
             <>
               <div className="eyebrow">GESTIÓN DEL ESTUDIO</div>
@@ -588,12 +604,14 @@ function App() {
                             </td>
                             <td>
                               <span className="status">{c.status}</span>
-                              <button
-                                className="text-button"
-                                onClick={() => setEvaluationCase(c.id)}
-                              >
-                                Evaluación y respuesta →
-                              </button>
+                              {canLegal && (
+                                <button
+                                  className="text-button"
+                                  onClick={() => setEvaluationCase(c.id)}
+                                >
+                                  Evaluación y respuesta →
+                                </button>
+                              )}
                               <button
                                 className="text-button"
                                 onClick={() => setClarificationCase(c.id)}
@@ -621,7 +639,7 @@ function App() {
                               )}
                             </td>
                             <td>
-                              {!c.lawyer_id && (
+                              {!c.lawyer_id && canAssign && (
                                 <>
                                   <small>Pendiente de asignación</small>
                                   {c.status !== "Atención inicial cerrada" && (
@@ -646,7 +664,7 @@ function App() {
                               <select
                                 aria-label={"Asignar abogado al caso " + c.id}
                                 value={c.lawyer_id || ""}
-                                disabled={busy}
+                                disabled={busy || !canAssign}
                                 onChange={(e) => {
                                   const lawyer_id = Number(e.target.value);
                                   act(async () => {
@@ -692,15 +710,17 @@ function App() {
                 <h1>
                   Control de plazos<span>.</span>
                 </h1>
-                <button
-                  className="primary"
-                  onClick={() => {
-                    setDeadlineCase(null);
-                    setModal(true);
-                  }}
-                >
-                  <Plus size={17} /> Nuevo plazo
-                </button>
+                {canLegal && (
+                  <button
+                    className="primary"
+                    onClick={() => {
+                      setDeadlineCase(null);
+                      setModal(true);
+                    }}
+                  >
+                    <Plus size={17} /> Nuevo plazo
+                  </button>
+                )}
               </div>
               <p className="intro">
                 Anticípate a cada vencimiento. Fechas mostradas en hora de Lima.
@@ -763,7 +783,7 @@ function App() {
               </section>
             </>
           )}
-          {user && evaluationCase && (
+          {user && canLegal && evaluationCase && (
             <Evaluation
               caseId={evaluationCase}
               api={api}
@@ -799,7 +819,7 @@ function App() {
               onRefresh={load}
             />
           )}
-          {modal && (
+          {user && canLegal && modal && (
             <div className="overlay">
               <section
                 className="card modal"

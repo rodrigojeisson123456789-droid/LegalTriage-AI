@@ -85,6 +85,10 @@ try {
       [name, `${users.length}-${email}`, await bcrypt.hash(password, 12)],
     );
     users.push(u.insertId);
+    await db.execute("UPDATE users SET role=? WHERE id=?", [
+      users.length === 3 ? "gerencia" : "abogado",
+      u.insertId,
+    ]);
   }
   child = spawn(
     process.execPath,
@@ -189,10 +193,13 @@ try {
       .lawyer,
     null,
   );
-  await req(`/team/${users[0]}`,'PUT',{available:true,specialties:['Civil']});
-  assert.equal((await publicCase()).lawyer,null);
-  const closed=await make(null,'Atención inicial cerrada');
-  assert.equal((await req(`/cases/${closed}/auto-assign`,'POST')).status,409);
+  await req(`/team/${users[0]}`, "PUT", {
+    available: true,
+    specialties: ["Civil"],
+  });
+  assert.equal((await publicCase()).lawyer, null);
+  const closed = await make(null, "Atención inicial cerrada");
+  assert.equal((await req(`/cases/${closed}/auto-assign`, "POST")).status, 409);
   const failed = await make(null, "Nuevo", "unavailable");
   assert.equal((await req(`/cases/${failed}/auto-assign`, "POST")).status, 409);
   assert.equal(

@@ -47,6 +47,7 @@ try {
     ["Abogado documentos prueba", email, await bcrypt.hash(password, 12)],
   );
   userId = user.insertId;
+  await db.execute("UPDATE users SET role='gerencia' WHERE id=?", [userId]);
   const pdf = await PDFDocument.create();
   pdf
     .addPage()

@@ -10,7 +10,7 @@ Requisitos: Node.js 22 o superior, npm y Docker con Compose (o MySQL 8 existente
 2. Copiar `server/.env.example` a `server/.env` **solo si no existe**. Establecer contraseñas propias, `JWT_SECRET` aleatorio de 32 caracteres o más y `MYSQL_ROOT_PASSWORD` si se usa Docker. Nunca versionar este archivo.
 3. `docker compose --env-file server/.env up -d` y esperar estado healthy con `docker compose --env-file server/.env ps`. Si usas MySQL existente, configura DB_HOST, DB_PORT, DB_USER, DB_PASSWORD y DB_NAME; la base debe existir.
 4. `npm run db:init` (crea las tablas sin borrar datos; se puede repetir).
-5. Crear usuario desde `server/`: `ADMIN_NAME='Nombre del abogado' ADMIN_EMAIL='abogado@example.com' node src/create-user.js`, suministrando `ADMIN_PASSWORD` mediante una variable segura (mínimo 12 caracteres). Todos los usuarios internos pueden gestionar los casos; no hay registro público.
+5. Crear usuario desde `server/`: `ADMIN_NAME='Nombre del abogado' ADMIN_EMAIL='abogado@example.com' node src/create-user.js`, suministrando `ADMIN_PASSWORD` mediante una variable segura (mínimo 12 caracteres). La primera cuenta creada por CLI recibe Gerencia si no existe otra; las posteriores usan ADMIN_ROLE o Soporte por defecto. No hay registro público.
 6. `npm run dev` desde la raíz. Vite sirve el frontend en puerto 5173 y delega `/api` al backend en 3001. Acceso del equipo abre el login.
 
 En este entorno se generó un `server/.env` local con secretos aleatorios para desarrollo. No contiene una clave de Gemini ni credenciales públicas de usuario. Crear tu propia cuenta mediante el paso 5.
@@ -42,7 +42,7 @@ El abogado selecciona un caso e ingresa título y fecha/hora de Lima (UTC−5). 
 
 Públicos: `GET /api/health`, `POST /api/cases`, `POST /api/login`, `POST /api/logout`. Privados: `GET /api/me`, `GET /api/users`, `GET /api/cases`, `PATCH /api/cases/:id`, `GET /api/deadlines`, `POST /api/deadlines`.
 
-Dashboard y agenda muestran hasta 500 registros; paginación, roles diferenciados, auditoría, recuperación de contraseña, retención de datos y notificaciones son ampliaciones pendientes.
+Dashboard y agenda muestran hasta 500 registros; paginación, auditoría integral, recuperación de contraseña y retención de datos son ampliaciones pendientes. Los roles y el correo explícito están implementados.
 
 ## Despliegue
 
@@ -56,7 +56,7 @@ La consulta y el documento se guardan juntos, en una transacción de MySQL. El a
 
 Gemini recibe la descripción y el documento por HTTPS y devuelve un JSON validado con: resumen, especialidad sugerida, tipo documental, legibilidad, hallazgos con página, fechas textuales con contexto y página e información faltante. Las referencias deben contrastarse con el original; la IA puede equivocarse. No se calculan ni crean plazos automáticamente. El abogado registra los plazos confirmados en Control de plazos.
 
-Si no hay clave, hay timeout o Gemini devuelve un error, el archivo permanece guardado y el caso aparece como Indeterminado, pendiente de revisión. Desde el panel privado, **Ver documentos y análisis → Analizar con Gemini** permite reintentar sin reenviar la consulta. Un reintento fallido conserva un análisis anterior válido. Solo usuarios autenticados pueden consultar análisis y descargar originales; todos los usuarios internos tienen el mismo acceso en esta versión.
+Si no hay clave, hay timeout o Gemini devuelve un error, el archivo permanece guardado y el caso aparece como Indeterminado, pendiente de revisión. Desde el panel privado, **Ver documentos y análisis → Analizar con Gemini** permite reintentar sin reenviar la consulta. Un reintento fallido conserva un análisis anterior válido. Solo usuarios autenticados pueden consultar análisis y descargar originales; Gerencia y Soporte acceden a la recepción completa; un Abogado solo a sus casos asignados.
 
 ### Actualizar una instalación existente en Windows
 
@@ -125,7 +125,7 @@ Desde `server/`, `node scripts/clarifications-smoke.js` prueba con MySQL real pe
 
 En **Consultas → Evaluación y respuesta**, el equipo registra conclusiones internas y redacta una Respuesta, Propuesta o Cotización. El importe opcional está en soles (PEN); para Cotización es obligatorio. Guardar un borrador no aprueba ni envía nada. Incluye vista previa del texto que podrá leer el cliente y control de revisión para evitar sobrescribir cambios de otro usuario: ante un conflicto, cerrar descartando cambios locales y volver a abrir para recuperar la versión guardada.
 
-Después de revisar los antecedentes, el abogado elige expresamente **seguimiento judicial** o **cierre de atención inicial**, guarda y confirma la aprobación. Se registran el usuario aprobador y la fecha; la evaluación queda bloqueada y esta versión no permite corregirla ni reabrirla. No hay sugerencias de conclusiones automáticas ni envío de notas internas a Gemini. Todos los usuarios internos conservan los mismos permisos actuales: todavía no hay roles diferenciados de abogado y soporte.
+Después de revisar los antecedentes, el abogado elige expresamente **seguimiento judicial** o **cierre de atención inicial**, guarda y confirma la aprobación. Se registran el usuario aprobador y la fecha; la evaluación queda bloqueada y esta versión no permite corregirla ni reabrirla. No hay sugerencias de conclusiones automáticas ni envío de notas internas a Gemini. Gerencia y el Abogado asignado pueden evaluar y aprobar; Soporte no puede acceder a notas internas ni aprobar.
 
 La aprobación se bloquea si hay aclaraciones vigentes sin responder. El cierre se bloquea si existen plazos futuros, y una atención cerrada no acepta nuevos plazos ni nuevas aclaraciones. El estado **En seguimiento judicial** permite registrar plazos mediante el botón correspondiente con el caso preseleccionado. Cerrar la atención inicial no declara concluido un proceso judicial ni silencia sus plazos; esta versión no incluye una operación posterior de cierre judicial.
 
@@ -139,7 +139,7 @@ Prueba: desde `server/`, `node scripts/evaluations-smoke.js` usa MySQL real y un
 
 ## Equipo y asignación automática
 
-Actualizar con `npm run db:init` crea `lawyer_profiles` y `lawyer_specialties`, sin cambiar usuarios ni responsables existentes. En **Equipo**, selecciona una o varias especialidades y activa **Disponible para recibir asignaciones automáticas** únicamente para abogados que atiendan casos. Todos comienzan sin perfil activo; una cuenta de soporte sin configurar no recibe asignaciones automáticas. Esta pantalla no cambia los permisos de acceso: todos los usuarios internos aún pueden gestionar perfiles y casos. Las cuentas se crean con `npm run user:create`, sin contraseñas predeterminadas.
+Actualizar con `npm run db:init` crea `lawyer_profiles` y `lawyer_specialties`, sin cambiar usuarios ni responsables existentes. En **Equipo**, selecciona una o varias especialidades y activa **Disponible para recibir asignaciones automáticas** únicamente para abogados que atiendan casos. Todos comienzan sin perfil activo; una cuenta de soporte sin configurar no recibe asignaciones automáticas. Solo Gerencia administra Equipo y crea cuentas desde la interfaz o con `npm run user:create`, sin contraseñas predeterminadas. Soporte no recibe asignaciones jurídicas. Gerencia puede atender casos si configura un perfil disponible.
 
 Al guardar una consulta nueva clasificada, se asigna un abogado disponible de esa especialidad con el menor número **total** de casos activos (de todas sus áreas). Se consideran activos Nuevo, En evaluación, Pendiente de aclaración y En seguimiento judicial; se excluye Atención inicial cerrada. En empate se usa el menor ID de usuario para obtener un resultado determinista. Las decisiones automáticas concurrentes se serializan en MySQL; es una solución orientada a un estudio pequeño. La carga puede cambiar después por acciones manuales.
 
@@ -174,3 +174,35 @@ Mientras PUBLIC_APP_URL sea localhost, el enlace del correo solo abre la aplicac
 Se registra un estado por enlace: pending, accepted, failed (autenticación rechazada) o uncertain. Se bloquean duplicados aceptados, pendientes y sin confirmar. Un fallo de autenticación permite reintentar después de corregir la configuración. Ante un error de red, timeout o interrupción del proceso no se puede asegurar si hubo envío: revisar el buzón antes de crear otro enlace. No hay reintentos automáticos ni garantía de entrega única de extremo a extremo. Crear otro enlace revoca el anterior según las reglas de aclaraciones/respuestas; evitar hacerlo mientras haya un correo en curso. El registro guarda el hash del token, no el cuerpo ni la contraseña. Los borradores y notas internas siguen siendo privados.
 
 Actualizar con `npm ci` y `npm run db:init` instala Nodemailer y crea `notifications`, conservando los casos. API privada: `GET /api/mail/config`, `GET/POST /api/cases/:id/notifications`. El botón permite vista previa o envío según MAIL_MODE. `npm test` cubre configuración y mensajes; desde `server/`, `node scripts/mail-smoke.js` usa MySQL real y Gmail simulado para validar permisos, enlaces, destinatario, duplicados y privacidad. No valida credenciales reales; ejecutar en una base de prueba, usa el puerto 3002 y limpia sus datos.
+
+## Roles y permisos
+
+Actualizar con `npm run db:init` añade `users.role`. En la primera migración elige como Gerencia la cuenta admin@legaltriage.local si existe, o la cuenta de menor ID; reconoce como Abogado a otras cuentas que ya tenían casos o disponibilidad, y deja el resto como Soporte. Conserva contraseñas, responsables y expedientes. Repetir la migración no cambia roles ya configurados. En una base vacía, el CLI permite crear la primera Gerencia. Las sesiones existentes consultan el rol actual en MySQL en cada petición; no se confía en un rol almacenado en el JWT.
+
+| Operación | Gerencia | Soporte | Abogado |
+|---|---|---|---|
+| Consultar casos, documentos y alertas | Todos | Todos | Solo asignados |
+| Clasificar y tramitar aclaraciones | Todos | Todos | Solo asignados |
+| Asignar o cambiar responsable | Sí | Sí | No |
+| Leer notas internas, evaluar, aprobar, compartir respuesta | Todos | No | Solo asignados |
+| Registrar plazos | Todos | No | Solo asignados |
+| Administrar perfiles, crear cuentas y cambiar roles | Sí | No | No |
+
+Los enlaces públicos del cliente siguen limitados a sus preguntas o su respuesta aprobada y no conceden acceso al panel. La API valida también el caso asociado a un ID de documento y filtra casos/plazos por responsable. Reasignar un caso retira acceso al abogado anterior en peticiones posteriores. Las escrituras transaccionales de expedientes vuelven a comprobar acceso al guardar, incluido el análisis de IA. Los datos que ya se mostraron en el navegador antes de una revocación no se pueden retirar retrospectivamente.
+
+En **Equipo → Crear cuenta**, Gerencia introduce nombre, correo, contraseña inicial de 12 a 128 caracteres y rol. Las contraseñas se guardan con bcrypt y no se envían por correo. No puedes cambiar tu propio rol; otra Gerencia debe hacerlo. No se permite dejar al sistema sin Gerencia, ni convertir en Soporte a alguien con casos activos: reasignarlos primero. Cambiar a Soporte desactiva la disponibilidad automática; los perfiles de Soporte no pueden activarse. Gerencia puede atender casos si así se configura.
+
+Para crear por PowerShell desde la raíz (valores locales, no compartir credenciales):
+
+```powershell
+$env:ADMIN_NAME = "Nombre de la persona"
+$env:ADMIN_EMAIL = "persona@example.com"
+$env:ADMIN_ROLE = "abogado"
+# Introducir ADMIN_PASSWORD mediante un mecanismo seguro antes de ejecutar:
+npm run user:create
+Remove-Item Env:ADMIN_PASSWORD
+```
+
+Si cambia el rol de una sesión abierta, recargar el navegador actualiza las vistas; el backend ya utiliza el rol vigente. La pantalla también actualiza el perfil al refrescar sus datos. No hay recuperación de contraseña, MFA ni auditoría integral en esta versión.
+
+`npm test` comprueba la matriz básica. Desde `server/`, `node scripts/roles-smoke.js` prueba MySQL real, acceso por caso/documento, notas internas, plazos, reasignación, cambios de rol con la misma sesión y creación de cuentas sin exponer contraseñas. Usa una API temporal en 3002 y elimina sus fixtures, sin contactar Gemini/Gmail. Los demás smoke tests crean ahora cuentas con roles explícitos; el script smoke.js general requiere una cuenta de Gerencia.

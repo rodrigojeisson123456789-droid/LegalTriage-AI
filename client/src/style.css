@@ -895,3 +895,5 @@ td small {
 .email-notification{padding:22px;border:1px solid #dce8df;border-radius:8px;margin:22px 0;background:#f4f8f5;font-size:12px}.email-notification>p{margin:12px 0;overflow-wrap:anywhere}.email-preview{margin-top:20px;border-top:1px solid #dce8df;padding-top:20px}.email-preview pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;margin:15px 0}.email-notification details{margin-top:20px}.email-notification li{font-size:11px;line-height:1.8;list-style:disc;margin:10px 0 0 16px}
 
 button:disabled{cursor:not-allowed}
+
+.new-user{padding:24px;margin:24px 0}.new-user form{padding:20px 0 0}.new-user .primary{margin-top:20px}.team-role{margin:20px 0;padding:16px 0;border-top:1px solid #e1e8e3}.team-role button{margin:14px 0;font-size:11px;text-decoration:underline}

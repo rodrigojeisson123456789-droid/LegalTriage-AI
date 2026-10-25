@@ -1,3 +1,4 @@
+import { guardCaseWrite } from "./access.js";
 import { Router } from "express";
 import { z } from "zod";
 import { randomBytes } from "node:crypto";
@@ -60,6 +61,12 @@ evaluations.put("/:id/evaluation", async (req, res) => {
     connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+    if (req.user) {
+      await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+        id,
+      ]);
+      await guardCaseWrite(req, connection, id);
+    }
     const [cases] = await connection.execute(
       "SELECT status FROM cases WHERE id=? FOR UPDATE",
       [id],
@@ -124,6 +131,12 @@ evaluations.post("/:id/evaluation/approve", async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+    if (req.user) {
+      await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+        id,
+      ]);
+      await guardCaseWrite(req, connection, id);
+    }
     const [cases] = await connection.execute(
       "SELECT status FROM cases WHERE id=? FOR UPDATE",
       [id],
@@ -203,6 +216,12 @@ evaluations.post("/:id/evaluation/share", async (req, res) => {
     connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+    if (req.user) {
+      await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+        id,
+      ]);
+      await guardCaseWrite(req, connection, id);
+    }
     await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
       id,
     ]);
@@ -241,6 +260,12 @@ evaluations.delete("/:id/evaluation/share", async (req, res) => {
     connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+    if (req.user) {
+      await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+        id,
+      ]);
+      await guardCaseWrite(req, connection, id);
+    }
     await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
       id,
     ]);

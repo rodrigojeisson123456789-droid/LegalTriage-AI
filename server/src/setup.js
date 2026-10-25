@@ -108,6 +108,24 @@ try {
   await db.query(
     `CREATE TABLE IF NOT EXISTS notifications (id INT AUTO_INCREMENT PRIMARY KEY,case_id INT NOT NULL,kind ENUM('clarification','response') NOT NULL,token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,status ENUM('pending','accepted','failed','uncertain') NOT NULL,created_by INT NOT NULL,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(kind,token_hash),FOREIGN KEY(case_id) REFERENCES cases(id),FOREIGN KEY(created_by) REFERENCES users(id))`,
   );
+  const [roleColumns] = await db.query(
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='users' AND COLUMN_NAME='role'",
+  );
+  if (!roleColumns.length) {
+    await db.query(
+      "ALTER TABLE users ADD COLUMN role ENUM('gerencia','soporte','abogado') NOT NULL DEFAULT 'soporte'",
+    );
+    await db.query(
+      "UPDATE users u LEFT JOIN lawyer_profiles p ON p.user_id=u.id SET u.role='abogado' WHERE p.available=1 OR EXISTS (SELECT 1 FROM cases c WHERE c.lawyer_id=u.id)",
+    );
+    const [admins] = await db.query(
+      "SELECT id FROM users ORDER BY (LOWER(email)='admin@legaltriage.local') DESC,id ASC LIMIT 1",
+    );
+    if (admins.length)
+      await db.execute("UPDATE users SET role='gerencia' WHERE id=?", [
+        admins[0].id,
+      ]);
+  }
   console.log(
     "Esquema MySQL listo (Laboral, documentos y aclaraciones; conserva casos existentes).",
   );

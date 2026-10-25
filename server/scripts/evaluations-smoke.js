@@ -66,6 +66,7 @@ try {
     ["Abogado prueba", email, await bcrypt.hash(password, 12)],
   );
   userId = u.insertId;
+  await db.execute("UPDATE users SET role='gerencia' WHERE id=?", [userId]);
   const id = await makeCase(),
     path = `/cases/${id}/evaluation`;
   assert.equal((await req(path)).status, 401);

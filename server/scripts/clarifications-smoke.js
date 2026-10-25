@@ -43,6 +43,7 @@ try {
     ["Abogado prueba", email, await bcrypt.hash(password, 12)],
   );
   userId = user.insertId;
+  await db.execute("UPDATE users SET role='gerencia' WHERE id=?", [userId]);
   const [created] = await db.execute(
     "INSERT INTO cases (name,document,email,phone,description,specialty,classification_status) VALUES (?,?,?,?,?,'Indeterminado','unavailable')",
     [

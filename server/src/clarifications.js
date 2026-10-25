@@ -1,3 +1,4 @@
+import { guardCaseWrite } from "./access.js";
 import { Router } from "express";
 import { createHash, randomBytes } from "node:crypto";
 import rateLimit from "express-rate-limit";
@@ -106,6 +107,12 @@ privateClarifications.post("/:id/clarifications", async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
+    if (req.user) {
+      await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+        id,
+      ]);
+      await guardCaseWrite(req, connection, id);
+    }
     const [cases] = await connection.execute(
       "SELECT id,status FROM cases WHERE id=? FOR UPDATE",
       [id],
@@ -120,12 +127,10 @@ privateClarifications.post("/:id/clarifications", async (req, res) => {
       )
     ) {
       await connection.rollback();
-      return res
-        .status(409)
-        .json({
-          error:
-            "La evaluación ya fue aprobada. No se pueden abrir nuevas aclaraciones en esta etapa.",
-        });
+      return res.status(409).json({
+        error:
+          "La evaluación ya fue aprobada. No se pueden abrir nuevas aclaraciones en esta etapa.",
+      });
     }
     await connection.execute(
       "UPDATE clarifications SET cancelled_at=UTC_TIMESTAMP() WHERE case_id=? AND answer IS NULL AND cancelled_at IS NULL",
@@ -163,6 +168,12 @@ privateClarifications.delete(
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
+      if (req.user) {
+        await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+          id,
+        ]);
+        await guardCaseWrite(req, connection, id);
+      }
       await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
         id,
       ]);
