@@ -14,6 +14,7 @@ import {
   BriefcaseBusiness,
 } from "lucide-react";
 import "./style.css";
+import { ClarificationManager, ClarificationReply } from "./Clarifications.jsx";
 import DocumentReview from "./DocumentReview.jsx";
 async function api(path, options = {}) {
   const r = await fetch("/api" + path, {
@@ -49,6 +50,7 @@ function App() {
     [search, setSearch] = useState(""),
     [modal, setModal] = useState(false),
     [documentCase, setDocumentCase] = useState(null),
+    [clarificationCase, setClarificationCase] = useState(null),
     [attachmentName, setAttachmentName] = useState("");
   async function load() {
     const [c, d, u] = await Promise.all([
@@ -158,6 +160,7 @@ function App() {
                     setDeadlines([]);
                     setUsers([]);
                     setDocumentCase(null);
+                    setClarificationCase(null);
                     change("public");
                   })
                 : change("login")
@@ -397,14 +400,18 @@ function App() {
                   <section className="specialties">
                     <h3>Áreas de atención</h3>
                     <div>
-                      {["Civil", "Corporativo", "Familia", "Bancario"].map(
-                        (x) => (
-                          <span key={x}>
-                            {x}
-                            <ArrowUpRight size={12} />
-                          </span>
-                        ),
-                      )}
+                      {[
+                        "Civil",
+                        "Corporativo",
+                        "Familia",
+                        "Bancario",
+                        "Laboral",
+                      ].map((x) => (
+                        <span key={x}>
+                          {x}
+                          <ArrowUpRight size={12} />
+                        </span>
+                      ))}
                     </div>
                     <p>
                       La clasificación inicial es orientativa y será revisada
@@ -529,13 +536,49 @@ function App() {
                               </button>
                             </td>
                             <td>
-                              <span className="tag">{c.specialty}</span>
+                              <select
+                                aria-label={"Especialidad del caso " + c.id}
+                                value={c.specialty}
+                                disabled={busy}
+                                onChange={(e) => {
+                                  const specialty = e.target.value;
+                                  act(async () => {
+                                    await api("/cases/" + c.id, {
+                                      method: "PATCH",
+                                      body: JSON.stringify({ specialty }),
+                                    });
+                                    await load();
+                                  });
+                                }}
+                              >
+                                {[
+                                  "Civil",
+                                  "Corporativo",
+                                  "Familia",
+                                  "Bancario",
+                                  "Laboral",
+                                  "Indeterminado",
+                                ].map((s) => (
+                                  <option key={s}>{s}</option>
+                                ))}
+                              </select>
+                              {c.classification_status === "manual" && (
+                                <small>
+                                  Especialidad revisada por el equipo
+                                </small>
+                              )}
                               {c.classification_status === "unavailable" && (
                                 <small>Revisión manual pendiente</small>
                               )}
                             </td>
                             <td>
                               <span className="status">{c.status}</span>
+                              <button
+                                className="text-button"
+                                onClick={() => setClarificationCase(c.id)}
+                              >
+                                Aclaraciones →
+                              </button>
                               {c.status === "Nuevo" && (
                                 <button
                                   disabled={busy}
@@ -671,6 +714,17 @@ function App() {
               </section>
             </>
           )}
+          {user && clarificationCase && (
+            <ClarificationManager
+              caseId={clarificationCase}
+              api={api}
+              onClose={() => {
+                setClarificationCase(null);
+                load().catch((e) => setError(e.message));
+              }}
+              onRefresh={load}
+            />
+          )}
           {user && documentCase && (
             <DocumentReview
               caseId={documentCase}
@@ -762,4 +816,18 @@ function App() {
     </div>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+function Root() {
+  const [hash, setHash] = useState(window.location.hash);
+  useEffect(() => {
+    const update = () => setHash(window.location.hash);
+    window.addEventListener("hashchange", update);
+    return () => window.removeEventListener("hashchange", update);
+  }, []);
+  const match = hash.match(/^#aclaracion=([a-f0-9]{64})$/);
+  return match ? (
+    <ClarificationReply key={match[1]} token={match[1]} api={api} />
+  ) : (
+    <App />
+  );
+}
+createRoot(document.getElementById("root")).render(<Root />);

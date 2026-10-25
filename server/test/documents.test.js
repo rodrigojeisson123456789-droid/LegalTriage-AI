@@ -79,6 +79,16 @@ test("análisis envía archivo y consulta y valida referencias, sin crear plazos
     assert.equal(result.status, "analyzed");
     assert.deepEqual(result.analysis, sample);
     assert.equal(
+      (
+        await analyzeDocument(
+          document,
+          "Despido laboral",
+          mock({ ...sample, specialty: "Laboral" }),
+        )
+      ).analysis.specialty,
+      "Laboral",
+    );
+    assert.equal(
       sent.contents[0].parts[1].inlineData.mimeType,
       "application/pdf",
     );

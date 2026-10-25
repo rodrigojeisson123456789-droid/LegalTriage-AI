@@ -14,8 +14,19 @@ import {
   MAX_DOCUMENT_BYTES,
   analysisErrorMessage,
 } from "./documents.js";
+import {
+  publicClarifications,
+  privateClarifications,
+  withClarificationContext,
+} from "./clarifications.js";
 import { db } from "./db.js";
-import { caseSchema, deadlineSchema, classify, urgency } from "./domain.js";
+import {
+  caseSchema,
+  deadlineSchema,
+  classify,
+  urgency,
+  categories,
+} from "./domain.js";
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)
   throw new Error("JWT_SECRET requiere al menos 32 caracteres");
 const app = express();
@@ -119,6 +130,7 @@ app.post(
     });
   },
 );
+app.use("/api/clarifications", publicClarifications);
 app.post("/api/login", limited, async (req, res) => {
   const { email, password } = z
     .object({ email: z.string().email(), password: z.string().min(1).max(200) })
@@ -161,6 +173,7 @@ app.use("/api", (req, res, next) => {
     res.status(401).json({ error: "Inicia sesión para continuar" });
   }
 });
+app.use("/api/cases", privateClarifications);
 app.get("/api/me", (req, res) =>
   res.json({ id: req.user.id, name: req.user.name }),
 );
@@ -221,7 +234,7 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
   const row = rows[0];
   const result = await analyzeDocument(
     { buffer: row.content, mime: row.mime_type, pages: row.page_count },
-    row.description,
+    await withClarificationContext(row.case_id, row.description),
   );
   // Conserva el análisis anterior, pero registra el diagnóstico del último intento.
   if (result.status !== "analyzed") {
@@ -230,12 +243,10 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
       id,
     ]);
     console.warn("Gemini analysis unavailable:", result.reason);
-    return res
-      .status(503)
-      .json({
-        error: analysisErrorMessage(result.reason),
-        reason: result.reason,
-      });
+    return res.status(503).json({
+      error: analysisErrorMessage(result.reason),
+      reason: result.reason,
+    });
   }
   const connection = await db.getConnection();
   try {
@@ -263,6 +274,7 @@ app.patch("/api/cases/:id", async (req, res) => {
     .object({
       status: z.enum(["Nuevo", "En evaluación"]).optional(),
       lawyer_id: z.number().int().positive().optional(),
+      specialty: z.enum(categories).optional(),
     })
     .refine((v) => Object.keys(v).length > 0)
     .parse(req.body);
@@ -274,8 +286,14 @@ app.patch("/api/cases/:id", async (req, res) => {
       return res.status(400).json({ error: "Abogado no encontrado" });
   }
   const [result] = await db.execute(
-    "UPDATE cases SET status=COALESCE(?,status),lawyer_id=COALESCE(?,lawyer_id) WHERE id=?",
-    [input.status || null, input.lawyer_id || null, id],
+    "UPDATE cases SET status=COALESCE(?,status),lawyer_id=COALESCE(?,lawyer_id),specialty=COALESCE(?,specialty),classification_status=IF(? IS NULL,classification_status,'manual') WHERE id=?",
+    [
+      input.status || null,
+      input.lawyer_id || null,
+      input.specialty || null,
+      input.specialty || null,
+      id,
+    ],
   );
   if (!result.affectedRows) return res.sendStatus(404);
   res.sendStatus(204);

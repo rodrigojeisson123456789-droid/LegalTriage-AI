@@ -23,8 +23,50 @@ try {
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(case_id) REFERENCES cases(id)
 )`);
+  // Amplía los ENUM de forma aditiva; conserva el orden y los valores existentes.
+  const [columns] = await db.query(
+    "SELECT COLUMN_NAME,COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='cases' AND COLUMN_NAME IN ('specialty','status')",
+  );
+  if (
+    !columns
+      .find((c) => c.COLUMN_NAME === "specialty")
+      ?.COLUMN_TYPE.includes("'Laboral'")
+  )
+    await db.query(
+      "ALTER TABLE cases MODIFY specialty ENUM('Civil','Corporativo','Familia','Bancario','Indeterminado','Laboral') NOT NULL",
+    );
+  if (
+    !columns
+      .find((c) => c.COLUMN_NAME === "status")
+      ?.COLUMN_TYPE.includes("'Pendiente de aclaración'")
+  )
+    await db.query(
+      "ALTER TABLE cases MODIFY status ENUM('Nuevo','En evaluación','Pendiente de aclaración') NOT NULL DEFAULT 'Nuevo'",
+    );
+  const [classificationColumns] = await db.query(
+    "SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='cases' AND COLUMN_NAME='classification_status'",
+  );
+  if (!classificationColumns[0].COLUMN_TYPE.includes("'manual'"))
+    await db.query(
+      "ALTER TABLE cases MODIFY classification_status ENUM('classified','unavailable','manual') NOT NULL",
+    );
+  await db.query(`CREATE TABLE IF NOT EXISTS clarifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    questions TEXT NOT NULL,
+    answer TEXT NULL,
+    token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin UNIQUE NOT NULL,
+    expires_at DATETIME NOT NULL,
+    created_by INT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    answered_at DATETIME NULL,
+    cancelled_at DATETIME NULL,
+    INDEX(case_id),
+    FOREIGN KEY(case_id) REFERENCES cases(id),
+    FOREIGN KEY(created_by) REFERENCES users(id)
+  )`);
   console.log(
-    "Esquema MySQL listo (incluye documentos; conserva casos existentes).",
+    "Esquema MySQL listo (Laboral, documentos y aclaraciones; conserva casos existentes).",
   );
 } finally {
   await db.end();

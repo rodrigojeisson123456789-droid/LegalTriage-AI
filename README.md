@@ -102,3 +102,21 @@ Para una única prueba de latencia extendida en PowerShell: `$env:GEMINI_DIAGNOS
 ### Tiempo de espera del análisis
 
 El análisis PDF y la clasificación de consultas esperan hasta **120 segundos** por respuesta de Gemini. El diagnóstico `npm run gemini:check` utiliza exactamente ese mismo límite e informa su duración. Se amplió a partir de una generación de texto real que tardó 36 segundos; esto no garantiza que el PDF responda dentro de dos minutos. Si expira, se conserva el documento y se permite reintentar. No modifica MySQL ni crea plazos automáticos. La prueba mínima `gemini:text` mantiene su límite independiente de 30 segundos salvo ajuste diagnóstico explícito.
+
+## Especialidad Laboral y circuito de aclaraciones
+
+`Laboral` está incluida en el prompt y la salida estructurada de Gemini, en MySQL y en el formulario público. Después de actualizar, ejecutar `npm run db:init`: amplía los ENUM de forma aditiva y crea `clarifications` sin borrar datos. Los casos antiguos no se reclasifican automáticamente. El abogado puede seleccionar **Laboral** directamente en la tabla (queda marcado como revisión manual), o volver a analizar el documento para actualizar la sugerencia de Gemini.
+
+En **Consultas → Aclaraciones**, el equipo revisa y edita las necesidades de información sugeridas por el último análisis documental disponible. Crear la solicitud cambia el caso a **Pendiente de aclaración** y muestra una sola vez un enlace privado. El abogado debe copiarlo y compartirlo por su canal habitual: **no hay envío automático de correo o WhatsApp**. Si pierde el enlace, puede crear otra solicitud; se invalidará la anterior sin responder. También puede cancelarla.
+
+El enlace vence a los siete días. Usa un token aleatorio de 256 bits; en MySQL solo se guarda su hash. El token va en el fragmento de la URL y se envía en el cuerpo de las peticiones, no en la ruta del API. Quien lo posea puede ver las preguntas y responder; no accede al expediente, DNI, documentos ni respuestas anteriores. Es una credencial de acceso: compartir solo con el destinatario. Se limita la frecuencia de uso y se deshabilita la caché de las respuestas del API.
+
+La respuesta admite texto (hasta 10.000 caracteres), requiere consentimiento, se guarda una sola vez de forma transaccional y devuelve el caso a **En evaluación**. No crea otra consulta ni dispara una nueva petición a Gemini. El equipo puede ver las últimas 20 solicitudes y respuestas. Al volver a analizar el documento, las últimas 20 aclaraciones respondidas se incorporan como contexto. Los documentos adicionales en respuestas y el envío automático de notificaciones quedan pendientes.
+
+**En desarrollo**, un enlace con `localhost` o `127.0.0.1` funciona solo en la laptop donde corre el sistema. Para un cliente externo se requiere desplegar frontend y API bajo una dirección pública HTTPS; esta actualización no publica el sitio.
+
+Prueba local: crear una solicitud, copiar el enlace, abrirlo en una ventana privada y responder. Volver al panel y abrir el historial; el caso debe volver a evaluación (el panel se refresca cada minuto o al cerrar Aclaraciones). Los enlaces respondidos, vencidos, cancelados o reemplazados no permiten una respuesta nueva.
+
+Endpoints: públicos `POST /api/clarifications/access` y `POST /api/clarifications/answer` (token por cuerpo); privados `GET/POST /api/cases/:id/clarifications` y `DELETE /api/cases/:id/clarifications/:requestId`. `PATCH /api/cases/:id` admite corrección manual de especialidad.
+
+Desde `server/`, `node scripts/clarifications-smoke.js` prueba con MySQL real permisos, clasificación Laboral/manual, sustitución, vencimiento, cancelación, respuesta única concurrente y conservación del mismo caso, y elimina sus datos de prueba. Usa temporalmente el puerto 3002. No contacta Gemini.
