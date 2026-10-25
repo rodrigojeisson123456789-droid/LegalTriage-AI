@@ -10,7 +10,8 @@
     "user:create": "node src/create-user.js",
     "gemini:check": "node scripts/gemini-check.js",
     "gemini:models": "node scripts/gemini-models.js",
-    "gemini:text": "node scripts/gemini-text.js"
+    "gemini:text": "node scripts/gemini-text.js",
+    "gemini:curl": "node scripts/gemini-curl.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

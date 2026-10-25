@@ -13,7 +13,8 @@
     "user:create": "npm run user:create -w server",
     "gemini:check": "npm run gemini:check -w server",
     "gemini:models": "npm run gemini:models -w server",
-    "gemini:text": "npm run gemini:text -w server"
+    "gemini:text": "npm run gemini:text -w server",
+    "gemini:curl": "npm run gemini:curl -w server"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
