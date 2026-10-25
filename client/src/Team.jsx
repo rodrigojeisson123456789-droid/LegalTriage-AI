@@ -134,6 +134,7 @@ function Member({ member, api, onSaved, user }) {
       >
         {busy ? "Guardando…" : "Guardar perfil"}
       </button>
+      <PasswordReset member={member} api={api} disabled={busy} />
       <p className="help">
         Desactivar disponibilidad no retira los casos ya asignados.
       </p>
@@ -200,7 +201,7 @@ function NewUser({ api, onSaved }) {
     <section className="card new-user">
       <h2>Crear cuenta del equipo</h2>
       <p className="help">
-        Define un rol y una contraseña única de 12 a 128 caracteres. Compártela
+        Define un rol y una contraseña única de 12 a 72 caracteres. Compártela
         con el destinatario por un canal privado; no se envía por correo.
       </p>
       {error && (
@@ -256,7 +257,7 @@ function NewUser({ api, onSaved }) {
               type="password"
               required
               minLength={12}
-              maxLength={128}
+              maxLength={72}
               autoComplete="new-password"
             />
           </label>
@@ -274,5 +275,85 @@ function NewUser({ api, onSaved }) {
         </button>
       </form>
     </section>
+  );
+}
+
+function PasswordReset({ member, api, disabled }) {
+  const [password, setPassword] = useState(""),
+    [confirmation, setConfirmation] = useState(""),
+    [busy, setBusy] = useState(false),
+    [message, setMessage] = useState(""),
+    [error, setError] = useState("");
+  return (
+    <details className="password-reset">
+      <summary>Restablecer contraseña de {member.name}</summary>
+      <p className="help">
+        Se conserva la cuenta y sus casos. El cambio cerrará todas sus sesiones.
+        No se envía la contraseña por correo.
+      </p>
+      <label>
+        Nueva contraseña para {member.name}
+        <input
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          maxLength={72}
+          disabled={busy || disabled}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setMessage("");
+          }}
+        />
+      </label>
+      <label>
+        Repetir contraseña para {member.name}
+        <input
+          type="password"
+          autoComplete="new-password"
+          value={confirmation}
+          maxLength={72}
+          disabled={busy || disabled}
+          onChange={(e) => setConfirmation(e.target.value)}
+        />
+      </label>
+      {error && (
+        <div className="error" role="alert">
+          {error}
+        </div>
+      )}
+      {message && <p role="status">{message}</p>}
+      <button
+        className="primary"
+        type="button"
+        disabled={
+          busy || disabled || password.length < 12 || password !== confirmation
+        }
+        onClick={async () => {
+          setBusy(true);
+          setError("");
+          setMessage("");
+          try {
+            const result = await api(`/users/${member.id}/password`, {
+              method: "PUT",
+              body: JSON.stringify({ password, confirmation }),
+            });
+            setPassword("");
+            setConfirmation("");
+            setMessage(result.message);
+            if (result.self) window.location.reload();
+          } catch (e) {
+            setError(e.message);
+          } finally {
+            setBusy(false);
+          }
+        }}
+      >
+        {busy ? "Restableciendo…" : "Guardar nueva contraseña"}
+      </button>
+      <p className="help">
+        Usa entre 12 y 72 caracteres. Ambos campos deben coincidir. Si cambias
+        la tuya, tendrás que iniciar sesión otra vez.
+      </p>
+    </details>
   );
 }

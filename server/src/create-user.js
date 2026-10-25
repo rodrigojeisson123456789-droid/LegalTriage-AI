@@ -27,7 +27,7 @@ try {
   console.error(
     error.code === "ER_DUP_ENTRY"
       ? "Ya existe ese correo."
-      : "No se pudo crear la cuenta. Verifica ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD (12 a 128 caracteres) y ADMIN_ROLE (gerencia, abogado o soporte).",
+      : "No se pudo crear la cuenta. Verifica ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD (12 a 72 caracteres) y ADMIN_ROLE (gerencia, abogado o soporte).",
   );
   process.exitCode = 1;
 } finally {

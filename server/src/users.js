@@ -7,7 +7,13 @@ export const usersRouter = Router();
 export const newUserSchema = z.object({
   name: z.string().trim().min(3).max(120),
   email: z.string().email().max(254),
-  password: z.string().min(12).max(128),
+  password: z
+    .string()
+    .min(12)
+    .max(72)
+    .refine((v) => Buffer.byteLength(v, "utf8") <= 72, {
+      message: "La contraseña no debe superar 72 bytes UTF-8.",
+    }),
   role: z.enum(roles),
 });
 usersRouter.post("/users", async (req, res) => {
@@ -70,12 +76,10 @@ usersRouter.put("/users/:id/role", async (req, res) => {
       );
       if (active[0].n) {
         await connection.rollback();
-        return res
-          .status(409)
-          .json({
-            error:
-              "Reasigna sus casos activos antes de cambiar el rol a Soporte.",
-          });
+        return res.status(409).json({
+          error:
+            "Reasigna sus casos activos antes de cambiar el rol a Soporte.",
+        });
       }
     }
     await connection.execute("UPDATE users SET role=? WHERE id=?", [role, id]);
@@ -86,6 +90,59 @@ usersRouter.put("/users/:id/role", async (req, res) => {
       );
     await connection.commit();
     res.sendStatus(204);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+});
+
+export const resetPasswordSchema = z
+  .object({
+    password: z
+      .string()
+      .min(12)
+      .max(72)
+      .refine((v) => Buffer.byteLength(v, "utf8") <= 72, {
+        message: "La contraseña no debe superar 72 bytes UTF-8.",
+      }),
+    confirmation: z.string(),
+  })
+  .refine((v) => v.password === v.confirmation, {
+    message: "Las contraseñas no coinciden.",
+  });
+usersRouter.put("/users/:id/password", async (req, res) => {
+  const id = z.coerce.number().int().positive().parse(req.params.id),
+    input = resetPasswordSchema.parse(req.body),
+    hash = await bcrypt.hash(input.password, 12),
+    connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [users] = await connection.query(
+      "SELECT id,role,session_version FROM users ORDER BY id FOR UPDATE",
+    );
+    const actor = users.find((u) => u.id === req.user.id);
+    if (
+      !actor ||
+      actor.role !== "gerencia" ||
+      actor.session_version !== req.user.session_version
+    )
+      throw new AccessError();
+    if (!users.some((u) => u.id === id)) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    await connection.execute(
+      "UPDATE users SET password_hash=?,session_version=session_version+1 WHERE id=?",
+      [hash, id],
+    );
+    await connection.commit();
+    res.json({
+      message:
+        "Contraseña restablecida. Las sesiones anteriores quedaron invalidadas.",
+      self: id === req.user.id,
+    });
   } catch (error) {
     await connection.rollback();
     throw error;

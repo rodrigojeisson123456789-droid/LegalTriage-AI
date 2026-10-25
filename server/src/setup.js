@@ -126,6 +126,13 @@ try {
         admins[0].id,
       ]);
   }
+  const [sessionColumns] = await db.query(
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='users' AND COLUMN_NAME='session_version'",
+  );
+  if (!sessionColumns.length)
+    await db.query(
+      "ALTER TABLE users ADD COLUMN session_version INT UNSIGNED NOT NULL DEFAULT 0",
+    );
   console.log(
     "Esquema MySQL listo (Laboral, documentos y aclaraciones; conserva casos existentes).",
   );

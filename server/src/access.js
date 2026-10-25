@@ -71,10 +71,15 @@ export async function authorize(req, res, next) {
 // Revalida permisos de escrituras después de bloquear el caso, incluso tras llamadas lentas a IA.
 export async function guardCaseWrite(req, connection, caseId) {
   const [users] = await connection.execute(
-    "SELECT id,name,role FROM users WHERE id=?",
+    "SELECT id,name,role,session_version FROM users WHERE id=?",
     [req.user.id],
   );
   const user = users[0];
+  if (user && user.session_version !== req.user.session_version)
+    throw new AccessError(
+      "La contraseña cambió. Inicia sesión nuevamente.",
+      401,
+    );
   if (
     !user ||
     !routeAllowed(

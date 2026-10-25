@@ -190,7 +190,7 @@ Actualizar con `npm run db:init` añade `users.role`. En la primera migración e
 
 Los enlaces públicos del cliente siguen limitados a sus preguntas o su respuesta aprobada y no conceden acceso al panel. La API valida también el caso asociado a un ID de documento y filtra casos/plazos por responsable. Reasignar un caso retira acceso al abogado anterior en peticiones posteriores. Las escrituras transaccionales de expedientes vuelven a comprobar acceso al guardar, incluido el análisis de IA. Los datos que ya se mostraron en el navegador antes de una revocación no se pueden retirar retrospectivamente.
 
-En **Equipo → Crear cuenta**, Gerencia introduce nombre, correo, contraseña inicial de 12 a 128 caracteres y rol. Las contraseñas se guardan con bcrypt y no se envían por correo. No puedes cambiar tu propio rol; otra Gerencia debe hacerlo. No se permite dejar al sistema sin Gerencia, ni convertir en Soporte a alguien con casos activos: reasignarlos primero. Cambiar a Soporte desactiva la disponibilidad automática; los perfiles de Soporte no pueden activarse. Gerencia puede atender casos si así se configura.
+En **Equipo → Crear cuenta**, Gerencia introduce nombre, correo, contraseña inicial de 12 a 72 caracteres y rol. Las contraseñas se guardan con bcrypt y no se envían por correo. No puedes cambiar tu propio rol; otra Gerencia debe hacerlo. No se permite dejar al sistema sin Gerencia, ni convertir en Soporte a alguien con casos activos: reasignarlos primero. Cambiar a Soporte desactiva la disponibilidad automática; los perfiles de Soporte no pueden activarse. Gerencia puede atender casos si así se configura.
 
 Para crear por PowerShell desde la raíz (valores locales, no compartir credenciales):
 
@@ -203,6 +203,14 @@ npm run user:create
 Remove-Item Env:ADMIN_PASSWORD
 ```
 
-Si cambia el rol de una sesión abierta, recargar el navegador actualiza las vistas; el backend ya utiliza el rol vigente. La pantalla también actualiza el perfil al refrescar sus datos. No hay recuperación de contraseña, MFA ni auditoría integral en esta versión.
+Si cambia el rol de una sesión abierta, recargar el navegador actualiza las vistas; el backend ya utiliza el rol vigente. La pantalla también actualiza el perfil al refrescar sus datos. No hay recuperación de contraseña por correo, MFA ni auditoría integral en esta versión; Gerencia puede restablecer contraseñas desde Equipo.
 
 `npm test` comprueba la matriz básica. Desde `server/`, `node scripts/roles-smoke.js` prueba MySQL real, acceso por caso/documento, notas internas, plazos, reasignación, cambios de rol con la misma sesión y creación de cuentas sin exponer contraseñas. Usa una API temporal en 3002 y elimina sus fixtures, sin contactar Gemini/Gmail. Los demás smoke tests crean ahora cuentas con roles explícitos; el script smoke.js general requiere una cuenta de Gerencia.
+
+### Restablecer una contraseña desde Gerencia
+
+Ejecutar `npm run db:init` tras actualizar añade `users.session_version` sin cambiar contraseñas existentes. En Equipo, abrir **Restablecer contraseña de [usuario]**, escribir y repetir una nueva clave y pulsar **Guardar nueva contraseña**. Conserva la cuenta, rol y casos. Requiere entre 12 y 72 caracteres y un máximo de 72 bytes UTF-8 para evitar truncamiento de bcrypt. La clave no se muestra ni se envía por correo. No es posible recuperar la anterior desde el hash.
+
+`PUT /api/users/:id/password` está reservado a Gerencia. Incrementa la versión de sesión y rechaza cookies anteriores a partir de la siguiente petición, incluidas cookies antiguas que no tenían versión. Si Gerencia cambia su propia contraseña, la interfaz se recarga y exige iniciar sesión con la nueva. Las sesiones existentes se conservan al migrar mientras no haya un restablecimiento. No incluye recuperación autoservicio ni enlace por email.
+
+Desde `server/`, `node scripts/password-smoke.js` valida permisos, confirmación, hash, rechazo de la contraseña anterior, revocación y nuevo acceso con MySQL real; limpia sus cuentas de prueba y no contacta Gemini/Gmail.

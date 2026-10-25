@@ -156,9 +156,13 @@ app.post("/api/login", limited, async (req, res) => {
     return res.status(401).json({ error: "Credenciales incorrectas" });
   res.cookie(
     "session",
-    jwt.sign({ id: user.id, name: user.name }, process.env.JWT_SECRET, {
-      expiresIn: "8h",
-    }),
+    jwt.sign(
+      { id: user.id, name: user.name, ver: user.session_version },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "8h",
+      },
+    ),
     {
       httpOnly: true,
       sameSite: "strict",
@@ -186,11 +190,15 @@ app.use("/api", async (req, res, next) => {
     return res.status(401).json({ error: "Inicia sesión para continuar" });
   }
   const [users] = await db.execute(
-    "SELECT id,name,role FROM users WHERE id=?",
+    "SELECT id,name,role,session_version FROM users WHERE id=?",
     [claims.id],
   );
   if (!users[0])
     return res.status(401).json({ error: "La cuenta ya no está disponible." });
+  if ((claims.ver ?? 0) !== users[0].session_version)
+    return res
+      .status(401)
+      .json({ error: "La contraseña cambió. Inicia sesión nuevamente." });
   req.user = users[0];
   next();
 });
@@ -333,11 +341,9 @@ app.patch("/api/cases/:id", async (req, res) => {
       );
       if (!users.length) {
         await connection.rollback();
-        return res
-          .status(400)
-          .json({
-            error: "El responsable debe tener rol de Abogado o Gerencia.",
-          });
+        return res.status(400).json({
+          error: "El responsable debe tener rol de Abogado o Gerencia.",
+        });
       }
     }
     const [result] = await connection.execute(
@@ -353,11 +359,9 @@ app.patch("/api/cases/:id", async (req, res) => {
     );
     if (!result.affectedRows) {
       await connection.rollback();
-      return res
-        .status(409)
-        .json({
-          error: "No se puede reabrir un caso con evaluación aprobada.",
-        });
+      return res.status(409).json({
+        error: "No se puede reabrir un caso con evaluación aprobada.",
+      });
     }
     await connection.commit();
     res.sendStatus(204);
