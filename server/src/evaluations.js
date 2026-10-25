@@ -1,3 +1,4 @@
+import { recordEvent } from "./history.js";
 import { guardCaseWrite } from "./access.js";
 import { Router } from "express";
 import { z } from "zod";
@@ -111,6 +112,9 @@ evaluations.put("/:id/evaluation", async (req, res) => {
       "UPDATE cases SET status='En evaluación' WHERE id=? AND status='Nuevo'",
       [id],
     );
+    await recordEvent(connection, id, "evaluation.saved", req.user, {
+      revision,
+    });
     await connection.commit();
     res.json({ revision });
   } catch (error) {
@@ -200,6 +204,9 @@ evaluations.post("/:id/evaluation/approve", async (req, res) => {
       "UPDATE clarifications SET cancelled_at=UTC_TIMESTAMP() WHERE case_id=? AND answer IS NULL AND cancelled_at IS NULL",
       [id],
     );
+    await recordEvent(connection, id, "evaluation.approved", req.user, {
+      status,
+    });
     await connection.commit();
     res.json({ status });
   } catch (error) {
@@ -243,6 +250,7 @@ evaluations.post("/:id/evaluation/share", async (req, res) => {
       "INSERT INTO response_links (case_id,token_hash,expires_at,created_by) VALUES (?,?,?,?)",
       [id, tokenHash(token), expires, req.user.id],
     );
+    await recordEvent(connection, id, "response.link_created", req.user);
     await connection.commit();
     res
       .set("Cache-Control", "no-store")
@@ -273,6 +281,7 @@ evaluations.delete("/:id/evaluation/share", async (req, res) => {
       "UPDATE response_links SET revoked_at=UTC_TIMESTAMP() WHERE case_id=? AND revoked_at IS NULL",
       [id],
     );
+    await recordEvent(connection, id, "response.links_revoked", req.user);
     await connection.commit();
     res.sendStatus(204);
   } catch (error) {

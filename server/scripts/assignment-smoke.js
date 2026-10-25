@@ -215,7 +215,10 @@ try {
   );
 } finally {
   child?.kill();
-  for (const id of ids) await db.execute("DELETE FROM cases WHERE id=?", [id]);
+  for (const id of ids) {
+    await db.execute("DELETE FROM case_events WHERE case_id=?", [id]);
+    await db.execute("DELETE FROM cases WHERE id=?", [id]);
+  }
   for (const id of users) {
     await db.execute("DELETE FROM lawyer_specialties WHERE user_id=?", [id]);
     await db.execute("DELETE FROM lawyer_profiles WHERE user_id=?", [id]);

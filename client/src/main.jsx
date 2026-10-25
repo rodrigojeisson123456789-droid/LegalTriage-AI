@@ -21,6 +21,7 @@ import { ClarificationManager, ClarificationReply } from "./Clarifications.jsx";
 import Evaluation, { ClientResponse } from "./Evaluation.jsx";
 import Team from "./Team.jsx";
 import Account from "./Account.jsx";
+import CaseHistory from "./CaseHistory.jsx";
 import DocumentReview from "./DocumentReview.jsx";
 async function api(path, options = {}) {
   const r = await fetch("/api" + path, {
@@ -62,6 +63,7 @@ function App() {
     [search, setSearch] = useState(""),
     [modal, setModal] = useState(false),
     [documentCase, setDocumentCase] = useState(null),
+    [historyCase, setHistoryCase] = useState(null),
     [clarificationCase, setClarificationCase] = useState(null),
     [evaluationCase, setEvaluationCase] = useState(null),
     [deadlineCase, setDeadlineCase] = useState(null),
@@ -76,6 +78,7 @@ function App() {
     setSearch("");
     setDeadlineCase(null);
     setDocumentCase(null);
+    setHistoryCase(null);
     setClarificationCase(null);
     setEvaluationCase(null);
     setModal(false);
@@ -703,6 +706,12 @@ function App() {
                             </td>
                             <td>
                               <span className="status">{c.status}</span>
+                              <button
+                                className="text-button"
+                                onClick={() => setHistoryCase(c.id)}
+                              >
+                                Historial del caso →
+                              </button>
                               {canLegal && (
                                 <button
                                   className="text-button"
@@ -881,6 +890,13 @@ function App() {
                 </div>
               </section>
             </>
+          )}
+          {user && historyCase && (
+            <CaseHistory
+              caseId={historyCase}
+              api={api}
+              onClose={() => setHistoryCase(null)}
+            />
           )}
           {user && canLegal && evaluationCase && (
             <Evaluation

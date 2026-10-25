@@ -205,6 +205,7 @@ try {
       "clarifications",
     ])
       await db.execute(`DELETE FROM ${table} WHERE case_id=?`, [caseId]);
+    await db.execute("DELETE FROM case_events WHERE case_id=?", [caseId]);
     await db.execute("DELETE FROM cases WHERE id=?", [caseId]);
   }
   if (userId) await db.execute("DELETE FROM users WHERE id=?", [userId]);

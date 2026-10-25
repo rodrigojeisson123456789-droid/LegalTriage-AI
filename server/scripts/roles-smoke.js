@@ -288,6 +288,7 @@ try {
       "deadlines",
     ])
       await db.execute(`DELETE FROM ${table} WHERE case_id=?`, [id]);
+    await db.execute("DELETE FROM case_events WHERE case_id=?", [id]);
     await db.execute("DELETE FROM cases WHERE id=?", [id]);
   }
   for (const id of users) {

@@ -1,3 +1,4 @@
+import { recordEvent } from "./history.js";
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { z } from "zod";
@@ -12,14 +13,12 @@ import {
 export const notifications = Router();
 notifications.get("/mail/config", (req, res) => {
   const c = mailConfig();
-  res
-    .set("Cache-Control", "no-store")
-    .json({
-      mode: c.mode,
-      configured: c.configured,
-      local_only: c.local,
-      origin: c.origin,
-    });
+  res.set("Cache-Control", "no-store").json({
+    mode: c.mode,
+    configured: c.configured,
+    local_only: c.local,
+    origin: c.origin,
+  });
 });
 notifications.get("/cases/:id/notifications", async (req, res) => {
   const id = z.coerce.number().int().positive().parse(req.params.id);
@@ -77,24 +76,20 @@ notifications.post(
             );
       if (!links.length) {
         await connection.rollback();
-        return res
-          .status(409)
-          .json({
-            error:
-              "El enlace no es vigente o no corresponde a este caso. Crea un enlace nuevo.",
-          });
+        return res.status(409).json({
+          error:
+            "El enlace no es vigente o no corresponde a este caso. Crea un enlace nuevo.",
+        });
       }
       const message = mailMessage(input.kind, input.token, config);
       if (config.mode === "preview") {
         await connection.rollback();
-        return res
-          .set("Cache-Control", "no-store")
-          .json({
-            status: "preview",
-            recipient,
-            ...message,
-            local_only: config.local,
-          });
+        return res.set("Cache-Control", "no-store").json({
+          status: "preview",
+          recipient,
+          ...message,
+          local_only: config.local,
+        });
       }
       transport = gmailTransport(config); // Valida configuración antes de registrar un intento.
       const [previous] = await connection.execute(
@@ -103,12 +98,10 @@ notifications.post(
       );
       if (previous.length && previous[0].status !== "failed") {
         await connection.rollback();
-        return res
-          .status(409)
-          .json({
-            error:
-              "Este enlace ya tiene un envío aceptado, pendiente o sin confirmar. Revisa el registro y el buzón antes de crear otro enlace.",
-          });
+        return res.status(409).json({
+          error:
+            "Este enlace ya tiene un envío aceptado, pendiente o sin confirmar. Revisa el registro y el buzón antes de crear otro enlace.",
+        });
       }
       if (previous.length) {
         notificationId = previous[0].id;
@@ -123,6 +116,10 @@ notifications.post(
         );
         notificationId = created.insertId;
       }
+      await recordEvent(connection, id, "mail.requested", req.user, {
+        notification_id: notificationId,
+        kind: input.kind,
+      });
       await connection.commit();
     } catch (error) {
       await connection.rollback();
@@ -137,10 +134,7 @@ notifications.post(
         ...mailMessage(input.kind, input.token, config),
       });
       if (!info.accepted?.length) throw new Error("No recipient accepted");
-      await db.execute(
-        "UPDATE notifications SET status='accepted',updated_at=UTC_TIMESTAMP() WHERE id=?",
-        [notificationId],
-      );
+      await finishNotification(id, notificationId, "accepted", req.user);
       res.json({
         status: "accepted",
         message:
@@ -148,13 +142,34 @@ notifications.post(
       });
     } catch (error) {
       const status = error.code === "EAUTH" ? "failed" : "uncertain";
-      await db.execute(
-        "UPDATE notifications SET status=?,updated_at=UTC_TIMESTAMP() WHERE id=?",
-        [status, notificationId],
-      );
+      await finishNotification(id, notificationId, status, req.user);
       res.status(502).json({ error: safeMailError(error), status });
     } finally {
       transport.close();
     }
   },
 );
+
+async function finishNotification(caseId, id, status, actor) {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+      caseId,
+    ]);
+    await connection.execute(
+      "UPDATE notifications SET status=?,updated_at=UTC_TIMESTAMP() WHERE id=?",
+      [status, id],
+    );
+    await recordEvent(connection, caseId, "mail.result", actor, {
+      notification_id: id,
+      status,
+    });
+    await connection.commit();
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}

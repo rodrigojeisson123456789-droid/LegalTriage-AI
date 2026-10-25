@@ -191,6 +191,10 @@ try {
     "DELETE d FROM documents d JOIN cases c ON c.id=d.case_id WHERE c.email=?",
     [email],
   );
+  await db.execute(
+    "DELETE e FROM case_events e JOIN cases c ON c.id=e.case_id WHERE c.email=?",
+    [email],
+  );
   await db.execute("DELETE FROM cases WHERE email=?", [email]);
   if (userId) await db.execute("DELETE FROM users WHERE id=?", [userId]);
   await db.end();

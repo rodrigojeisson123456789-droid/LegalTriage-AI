@@ -133,6 +133,21 @@ try {
     await db.query(
       "ALTER TABLE users ADD COLUMN session_version INT UNSIGNED NOT NULL DEFAULT 0",
     );
+  await db.query(`CREATE TABLE IF NOT EXISTS case_events (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    case_id INT NOT NULL,
+    action VARCHAR(64) NOT NULL,
+    actor_type ENUM('usuario','sistema','cliente') NOT NULL,
+    actor_id INT NULL,
+    actor_name VARCHAR(120) NOT NULL,
+    actor_role VARCHAR(20) NULL,
+    audience ENUM('all','legal') NOT NULL,
+    details JSON NOT NULL,
+    created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    INDEX(case_id,id),
+    FOREIGN KEY(case_id) REFERENCES cases(id),
+    FOREIGN KEY(actor_id) REFERENCES users(id) ON DELETE SET NULL
+  )`);
   console.log(
     "Esquema MySQL listo (Laboral, documentos y aclaraciones; conserva casos existentes).",
   );

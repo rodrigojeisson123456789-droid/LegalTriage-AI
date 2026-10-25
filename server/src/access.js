@@ -23,6 +23,7 @@ export function routeAllowed(role, method, path, body = {}) {
       (method === "GET" && path.endsWith("/download")) ||
       (method === "POST" && path.endsWith("/analyze"))
     );
+  if (/^\/cases\/\d+\/history$/.test(path)) return method === "GET";
   if (/^\/cases\/\d+\/documents$/.test(path)) return method === "GET";
   if (/^\/cases\/\d+\/clarifications(?:\/\d+)?$/.test(path))
     return ["GET", "POST", "DELETE"].includes(method);

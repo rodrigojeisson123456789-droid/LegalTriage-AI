@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { history, recordEvent } from "./history.js";
 import {
   authorize,
   AccessError,
@@ -126,6 +127,23 @@ app.post(
             result.analysis ? new Date() : null,
           ],
         );
+      await recordEvent(connection, id, "case.created", { type: "cliente" });
+      await recordEvent(connection, id, "case.classified", null, {
+        specialty: ai.specialty,
+        status: ai.classification_status,
+      });
+      if (document) {
+        await recordEvent(
+          connection,
+          id,
+          "document.received",
+          { type: "cliente" },
+          { mime: document.mime, pages: document.pages },
+        );
+        await recordEvent(connection, id, "document.analyzed", null, {
+          status: result.status,
+        });
+      }
       await autoAssign(connection, id);
       await connection.commit();
     } catch (error) {
@@ -208,6 +226,7 @@ app.use("/api/cases", privateClarifications);
 app.use("/api/cases", evaluations);
 app.use("/api", assignment);
 app.use("/api", notifications);
+app.use("/api", history);
 app.get("/api/me", (req, res) =>
   res.json({ id: req.user.id, name: req.user.name, role: req.user.role }),
 );
@@ -282,11 +301,31 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
   );
   // Conserva el análisis anterior, pero registra el diagnóstico del último intento.
   if (result.status !== "analyzed") {
-    await db.execute("UPDATE documents SET failure_reason=? WHERE id=?", [
-      result.reason,
-      id,
-    ]);
-    console.warn("Gemini analysis unavailable:", result.reason);
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+        row.case_id,
+      ]);
+      await guardCaseWrite(req, connection, row.case_id);
+      await connection.execute(
+        "UPDATE documents SET failure_reason=? WHERE id=?",
+        [result.reason, id],
+      );
+      await recordEvent(
+        connection,
+        row.case_id,
+        "document.analyzed",
+        req.user,
+        { status: "unavailable" },
+      );
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
     return res.status(503).json({
       error: analysisErrorMessage(result.reason),
       reason: result.reason,
@@ -307,7 +346,14 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
       "UPDATE cases SET specialty=?,classification_status=? WHERE id=?",
       [result.analysis.specialty, "classified", row.case_id],
     );
-    await autoAssign(connection, row.case_id);
+    await recordEvent(connection, row.case_id, "document.analyzed", req.user, {
+      status: "analyzed",
+    });
+    await recordEvent(connection, row.case_id, "case.classified", req.user, {
+      specialty: result.analysis.specialty,
+      status: "classified",
+    });
+    await autoAssign(connection, row.case_id, req.user);
     await connection.commit();
   } catch (error) {
     await connection.rollback();
@@ -330,13 +376,16 @@ app.patch("/api/cases/:id", async (req, res) => {
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
-    await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
-      id,
-    ]);
+    const [beforeRows] = await connection.execute(
+      "SELECT id,lawyer_id,specialty,status,classification_status FROM cases WHERE id=? FOR UPDATE",
+      [id],
+    );
     await guardCaseWrite(req, connection, id);
+    const previous = beforeRows[0];
+    let lawyerName = null;
     if (input.lawyer_id) {
       const [users] = await connection.execute(
-        "SELECT id FROM users WHERE id=? AND role IN ('gerencia','abogado') FOR UPDATE",
+        "SELECT id,name FROM users WHERE id=? AND role IN ('gerencia','abogado') FOR UPDATE",
         [input.lawyer_id],
       );
       if (!users.length) {
@@ -345,6 +394,7 @@ app.patch("/api/cases/:id", async (req, res) => {
           error: "El responsable debe tener rol de Abogado o Gerencia.",
         });
       }
+      lawyerName = users[0].name;
     }
     const [result] = await connection.execute(
       "UPDATE cases SET status=COALESCE(?,status),lawyer_id=COALESCE(?,lawyer_id),specialty=COALESCE(?,specialty),classification_status=IF(? IS NULL,classification_status,'manual') WHERE id=? AND (? IS NULL OR status NOT IN ('En seguimiento judicial','Atención inicial cerrada'))",
@@ -363,6 +413,26 @@ app.patch("/api/cases/:id", async (req, res) => {
         error: "No se puede reabrir un caso con evaluación aprobada.",
       });
     }
+    if (input.lawyer_id && input.lawyer_id !== previous.lawyer_id)
+      await recordEvent(connection, id, "assignment.manual", req.user, {
+        previous_lawyer_id: previous.lawyer_id,
+        lawyer_id: input.lawyer_id,
+        lawyer_name: lawyerName,
+      });
+    if (
+      input.specialty &&
+      (input.specialty !== previous.specialty ||
+        previous.classification_status !== "manual")
+    )
+      await recordEvent(connection, id, "case.specialty_changed", req.user, {
+        previous: previous.specialty,
+        specialty: input.specialty,
+      });
+    if (input.status && input.status !== previous.status)
+      await recordEvent(connection, id, "case.status_changed", req.user, {
+        previous: previous.status,
+        status: input.status,
+      });
     await connection.commit();
     res.sendStatus(204);
   } catch (error) {
@@ -405,6 +475,10 @@ app.post("/api/deadlines", async (req, res) => {
       "INSERT INTO deadlines (case_id,title,due_at,created_by) VALUES (?,?,?,?)",
       [input.case_id, input.title, new Date(input.due_at), req.user.id],
     );
+    await recordEvent(connection, input.case_id, "deadline.created", req.user, {
+      deadline_id: result.insertId,
+      due_at: new Date(input.due_at).toISOString(),
+    });
     await connection.commit();
     res.status(201).json({ id: result.insertId });
   } catch (error) {

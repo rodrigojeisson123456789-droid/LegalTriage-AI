@@ -1,3 +1,4 @@
+import { recordEvent } from "./history.js";
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "./db.js";
@@ -22,7 +23,7 @@ export const profileSchema = z
     message: "Para estar disponible, selecciona al menos una especialidad.",
   });
 // Debe llamarse dentro de una transacción. Bloquea caso y luego usuarios en orden.
-export async function autoAssign(connection, caseId) {
+export async function autoAssign(connection, caseId, actor = null) {
   const [cases] = await connection.execute(
     "SELECT lawyer_id,specialty,status,classification_status FROM cases WHERE id=? FOR UPDATE",
     [caseId],
@@ -40,11 +41,11 @@ export async function autoAssign(connection, caseId) {
   // Serializa decisiones automáticas y cambios de disponibilidad en estudios pequeños.
   await connection.query("SELECT id FROM users ORDER BY id FOR UPDATE");
   const [candidates] = await connection.execute(
-    `SELECT u.id,COUNT(c.id) AS active_cases FROM users u
+    `SELECT u.id,u.name,COUNT(c.id) AS active_cases FROM users u
  JOIN lawyer_profiles p ON p.user_id=u.id AND p.available=1 AND u.role IN ('gerencia','abogado')
  JOIN lawyer_specialties s ON s.user_id=u.id AND s.specialty=?
  LEFT JOIN cases c ON c.lawyer_id=u.id AND c.status<>'Atención inicial cerrada'
- GROUP BY u.id ORDER BY active_cases ASC,u.id ASC LIMIT 1`,
+ GROUP BY u.id,u.name ORDER BY active_cases ASC,u.id ASC LIMIT 1`,
     [row.specialty],
   );
   if (!candidates.length) return { reason: "no_match" };
@@ -52,6 +53,10 @@ export async function autoAssign(connection, caseId) {
     "UPDATE cases SET lawyer_id=? WHERE id=? AND lawyer_id IS NULL",
     [candidates[0].id, caseId],
   );
+  await recordEvent(connection, caseId, "assignment.auto", actor, {
+    lawyer_id: candidates[0].id,
+    lawyer_name: candidates[0].name,
+  });
   return { reason: "assigned", lawyer_id: candidates[0].id };
 }
 export const assignment = Router();
@@ -89,12 +94,10 @@ assignment.put("/team/:id", async (req, res) => {
     }
     if (input.available && users[0].role === "soporte") {
       await connection.rollback();
-      return res
-        .status(409)
-        .json({
-          error:
-            "Soporte no recibe asignaciones jurídicas. Cambia primero su rol a Abogado.",
-        });
+      return res.status(409).json({
+        error:
+          "Soporte no recibe asignaciones jurídicas. Cambia primero su rol a Abogado.",
+      });
     }
     await connection.execute(
       "INSERT INTO lawyer_profiles (user_id,available) VALUES (?,?) ON DUPLICATE KEY UPDATE available=VALUES(available)",
@@ -122,7 +125,7 @@ assignment.post("/cases/:id/auto-assign", async (req, res) => {
     connection = await db.getConnection();
   try {
     await connection.beginTransaction();
-    const result = await autoAssign(connection, id);
+    const result = await autoAssign(connection, id, req.user);
     await connection.commit();
     const messages = {
       not_found: "Caso no encontrado.",

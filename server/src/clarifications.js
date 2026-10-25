@@ -1,3 +1,4 @@
+import { recordEvent } from "./history.js";
 import { guardCaseWrite } from "./access.js";
 import { Router } from "express";
 import { createHash, randomBytes } from "node:crypto";
@@ -81,6 +82,13 @@ publicClarifications.post("/answer", async (req, res) => {
       "UPDATE cases SET status='En evaluación' WHERE id=?",
       [row.case_id],
     );
+    await recordEvent(
+      connection,
+      row.case_id,
+      "clarification.answered",
+      { type: "cliente" },
+      { request_id: row.id },
+    );
     await connection.commit();
     res.json({ status: "received" });
   } catch (error) {
@@ -144,6 +152,9 @@ privateClarifications.post("/:id/clarifications", async (req, res) => {
       "UPDATE cases SET status='Pendiente de aclaración' WHERE id=?",
       [id],
     );
+    await recordEvent(connection, id, "clarification.requested", req.user, {
+      request_id: created.insertId,
+    });
     await connection.commit();
     res
       .set("Cache-Control", "no-store")
@@ -191,6 +202,9 @@ privateClarifications.delete(
         "UPDATE cases SET status='En evaluación' WHERE id=? AND status='Pendiente de aclaración'",
         [id],
       );
+      await recordEvent(connection, id, "clarification.cancelled", req.user, {
+        request_id: requestId,
+      });
       await connection.commit();
       res.sendStatus(204);
     } catch (error) {
