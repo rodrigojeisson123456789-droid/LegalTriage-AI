@@ -1,3 +1,4 @@
+import { recordVersion } from "./versions.js";
 import "dotenv/config";
 import { history, recordEvent } from "./history.js";
 import {
@@ -96,7 +97,7 @@ app.post(
         }
       : await classify(input.description);
     const connection = await db.getConnection();
-    let id;
+    let id, documentId;
     try {
       await connection.beginTransaction();
       const [created] = await connection.execute(
@@ -112,8 +113,8 @@ app.post(
         ],
       );
       id = created.insertId;
-      if (document)
-        await connection.execute(
+      if (document) {
+        const [savedDocument] = await connection.execute(
           "INSERT INTO documents (case_id,original_name,mime_type,page_count,content,analysis_status,failure_reason,analysis,analyzed_at) VALUES (?,?,?,?,?,?,?,?,?)",
           [
             id,
@@ -127,6 +128,8 @@ app.post(
             result.analysis ? new Date() : null,
           ],
         );
+        documentId = savedDocument.insertId;
+      }
       await recordEvent(connection, id, "case.created", { type: "cliente" });
       await recordEvent(connection, id, "case.classified", null, {
         specialty: ai.specialty,
@@ -140,9 +143,22 @@ app.post(
           { type: "cliente" },
           { mime: document.mime, pages: document.pages },
         );
-        await recordEvent(connection, id, "document.analyzed", null, {
-          status: result.status,
-        });
+        const eventId = await recordEvent(
+          connection,
+          id,
+          "document.analyzed",
+          null,
+          {
+            status: result.status,
+          },
+        );
+        if (result.status === "analyzed")
+          await recordVersion(connection, eventId, "document", {
+            document_id: documentId,
+            name: document.name,
+            pages: document.pages,
+            analysis: result.analysis,
+          });
       }
       await autoAssign(connection, id);
       await connection.commit();
@@ -346,8 +362,20 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
       "UPDATE cases SET specialty=?,classification_status=? WHERE id=?",
       [result.analysis.specialty, "classified", row.case_id],
     );
-    await recordEvent(connection, row.case_id, "document.analyzed", req.user, {
-      status: "analyzed",
+    const eventId = await recordEvent(
+      connection,
+      row.case_id,
+      "document.analyzed",
+      req.user,
+      {
+        status: "analyzed",
+      },
+    );
+    await recordVersion(connection, eventId, "document", {
+      document_id: id,
+      name: row.original_name,
+      pages: row.page_count,
+      analysis: result.analysis,
     });
     await recordEvent(connection, row.case_id, "case.classified", req.user, {
       specialty: result.analysis.specialty,

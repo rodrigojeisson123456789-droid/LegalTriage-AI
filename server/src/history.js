@@ -1,3 +1,4 @@
+import { versionPayload } from "./versions.js";
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "./db.js";
@@ -44,6 +45,8 @@ const rules = {
   "clarification.requested": z.object({ request_id: id }).strict(),
   "clarification.answered": z.object({ request_id: id }).strict(),
   "clarification.cancelled": z.object({ request_id: id }).strict(),
+  "evaluation.baseline": z.object({ revision: id }).strict(),
+  "document.baseline": z.object({}).strict(),
   "evaluation.saved": z.object({ revision: id }).strict(),
   "evaluation.approved": z.object({ status: state }).strict(),
   "response.link_created": z.object({}).strict(),
@@ -65,6 +68,7 @@ const rules = {
     .strict(),
 };
 const legalOnly = new Set([
+  "evaluation.baseline",
   "evaluation.saved",
   "response.link_created",
   "response.links_revoked",
@@ -102,7 +106,7 @@ export async function recordEvent(
     name = user.name;
     role = user.role;
   }
-  await connection.execute(
+  const [result] = await connection.execute(
     "INSERT INTO case_events (case_id,action,actor_type,actor_id,actor_name,actor_role,audience,details) VALUES (?,?,?,?,?,?,?,?)",
     [
       caseId,
@@ -115,6 +119,7 @@ export async function recordEvent(
       JSON.stringify(safe),
     ],
   );
+  return result.insertId;
 }
 export const history = Router();
 history.get("/cases/:id/history", async (req, res) => {
@@ -133,24 +138,41 @@ history.get("/cases/:id/history", async (req, res) => {
   }
   if (req.user.role === "soporte") filters.push("audience='all'");
   const [rows] = await db.execute(
-    "SELECT id,action,actor_type,actor_name,actor_role,details,created_at FROM case_events WHERE " +
+    "SELECT id,action,actor_type,actor_name,actor_role,details,created_at,EXISTS(SELECT 1 FROM case_versions v WHERE v.event_id=case_events.id AND (? <> 'soporte' OR v.kind='document')) AS has_version FROM case_events WHERE " +
       filters.join(" AND ") +
       " ORDER BY id DESC LIMIT 51",
-    params,
+    [req.user.role, ...params],
   );
-  const selected = rows
-    .slice(0, 50)
-    .map((row) => ({
-      ...row,
-      details: eventDetails(
-        row.action,
-        typeof row.details === "string" ? JSON.parse(row.details) : row.details,
-      ),
-    }));
-  res
-    .set("Cache-Control", "no-store")
-    .json({
-      events: selected,
-      next_cursor: rows.length > 50 ? selected.at(-1).id : null,
-    });
+  const selected = rows.slice(0, 50).map((row) => ({
+    ...row,
+    details: eventDetails(
+      row.action,
+      typeof row.details === "string" ? JSON.parse(row.details) : row.details,
+    ),
+  }));
+  res.set("Cache-Control", "no-store").json({
+    events: selected,
+    next_cursor: rows.length > 50 ? selected.at(-1).id : null,
+  });
+});
+
+history.get("/cases/:id/history/:eventId/version", async (req, res) => {
+  const caseId = z.coerce.number().int().positive().parse(req.params.id);
+  const eventId = z.coerce.number().int().positive().parse(req.params.eventId);
+  const [rows] = await db.execute(
+    "SELECT v.kind,v.payload FROM case_versions v JOIN case_events e ON e.id=v.event_id WHERE e.case_id=? AND e.id=? AND (? <> 'soporte' OR (e.audience='all' AND v.kind='document'))",
+    [caseId, eventId, req.user.role],
+  );
+  if (!rows.length)
+    return res
+      .status(404)
+      .json({ error: "Esta versión no está disponible para tu cuenta." });
+  const { kind, payload } = rows[0];
+  res.set("Cache-Control", "no-store").json({
+    kind,
+    payload: versionPayload(
+      kind,
+      typeof payload === "string" ? JSON.parse(payload) : payload,
+    ),
+  });
 });

@@ -1,3 +1,4 @@
+import { recordVersion, evaluationPayload } from "./versions.js";
 import { recordEvent } from "./history.js";
 import { guardCaseWrite } from "./access.js";
 import { Router } from "express";
@@ -112,9 +113,21 @@ evaluations.put("/:id/evaluation", async (req, res) => {
       "UPDATE cases SET status='En evaluación' WHERE id=? AND status='Nuevo'",
       [id],
     );
-    await recordEvent(connection, id, "evaluation.saved", req.user, {
-      revision,
-    });
+    const eventId = await recordEvent(
+      connection,
+      id,
+      "evaluation.saved",
+      req.user,
+      {
+        revision,
+      },
+    );
+    await recordVersion(
+      connection,
+      eventId,
+      "evaluation",
+      evaluationPayload({ ...input, revision }, false),
+    );
     await connection.commit();
     res.json({ revision });
   } catch (error) {
@@ -204,9 +217,21 @@ evaluations.post("/:id/evaluation/approve", async (req, res) => {
       "UPDATE clarifications SET cancelled_at=UTC_TIMESTAMP() WHERE case_id=? AND answer IS NULL AND cancelled_at IS NULL",
       [id],
     );
-    await recordEvent(connection, id, "evaluation.approved", req.user, {
-      status,
-    });
+    const eventId = await recordEvent(
+      connection,
+      id,
+      "evaluation.approved",
+      req.user,
+      {
+        status,
+      },
+    );
+    await recordVersion(
+      connection,
+      eventId,
+      "evaluation",
+      evaluationPayload({ ...row, revision: row.revision + 1 }, true),
+    );
     await connection.commit();
     res.json({ status });
   } catch (error) {

@@ -1,3 +1,4 @@
+import VersionReader from "./VersionReader.jsx";
 import React, { useEffect, useRef, useState } from "react";
 function description(event) {
   const d = event.details;
@@ -28,6 +29,10 @@ function description(event) {
       return `Respuesta a la aclaración #${d.request_id} recibida; caso en evaluación.`;
     case "clarification.cancelled":
       return `Solicitud de aclaración #${d.request_id} cancelada.`;
+    case "evaluation.baseline":
+      return `Evaluación vigente conservada al activar las versiones (revisión ${d.revision}).`;
+    case "document.baseline":
+      return "Análisis vigente conservado al activar las versiones.";
     case "evaluation.saved":
       return `Borrador de evaluación guardado (revisión ${d.revision}).`;
     case "evaluation.approved":
@@ -116,7 +121,8 @@ export default function CaseHistory({ caseId, api, onClose }) {
         <p className="help">
           Acciones registradas desde la incorporación del historial. Las
           anteriores no se reconstruyen. Fechas en hora de Lima; más recientes
-          primero.
+          primero. Usa «Ver versión guardada» para leer el contenido de ese
+          momento sin modificar el actual.
         </p>
         {error && (
           <div className="error" role="alert">
@@ -141,6 +147,9 @@ export default function CaseHistory({ caseId, api, onClose }) {
                   ? ` · ${{ gerencia: "Gerencia", abogado: "Abogado", soporte: "Soporte" }[event.actor_role]}`
                   : ""}
               </small>
+              {!!event.has_version && (
+                <VersionReader caseId={caseId} eventId={event.id} api={api} />
+              )}
             </li>
           ))}
         </ol>

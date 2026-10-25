@@ -1,3 +1,4 @@
+import AnalysisContent from "./AnalysisContent.jsx";
 import React, { useEffect, useRef, useState } from "react";
 
 const reasons = {
@@ -122,63 +123,7 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
             )}
             {doc.analysis && (
               <>
-                <div className="document-meta">
-                  <span className="tag">{doc.analysis.specialty}</span>
-                  <span>{doc.analysis.document_type}</span>
-                </div>
-                {!doc.analysis.readable && (
-                  <div className="error">
-                    Gemini indica que el documento no es legible. Revisa el
-                    original; no hay extracción fiable.
-                  </div>
-                )}
-                <h3>Resumen</h3>
-                <p className="analysis-text">{doc.analysis.summary}</p>
-                <h3>Hallazgos y referencias</h3>
-                {doc.analysis.findings.length ? (
-                  <ul>
-                    {doc.analysis.findings.map((item, i) => (
-                      <li key={i}>
-                        {item.detail} <strong>· Pág. {item.page}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="help">
-                    No se identificaron hallazgos verificables.
-                  </p>
-                )}
-                <h3>Fechas mencionadas</h3>
-                {doc.analysis.dates.length ? (
-                  <ul>
-                    {doc.analysis.dates.map((item, i) => (
-                      <li key={i}>
-                        <strong>{item.text}</strong> — {item.context}{" "}
-                        <strong>· Pág. {item.page}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="help">No se detectaron fechas.</p>
-                )}
-                <div className="notice">
-                  Estas fechas no son plazos confirmados. El abogado debe
-                  verificar la notificación y las reglas aplicables antes de
-                  registrar una alerta en Control de plazos.
-                </div>
-                <h3>Información faltante o por aclarar</h3>
-                {doc.analysis.missing_information.length ? (
-                  <ul>
-                    {doc.analysis.missing_information.map((item, i) => (
-                      <li key={i}>{item}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="help">
-                    El análisis no señaló información faltante; esto no
-                    garantiza que el expediente esté completo.
-                  </p>
-                )}
+                <AnalysisContent analysis={doc.analysis} />
               </>
             )}
             <button
@@ -193,8 +138,8 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
                   : "Analizar con Gemini"}
             </button>
             <p className="help">
-              El análisis puede tardar hasta 2 minutos. Las referencias de la
-              IA también requieren comprobación.
+              El análisis puede tardar hasta 2 minutos. Las referencias de la IA
+              también requieren comprobación.
             </p>
           </article>
         ))}

@@ -1,3 +1,5 @@
+import { recordEvent } from "./history.js";
+import { recordVersion, evaluationPayload } from "./versions.js";
 import { db } from "./db.js";
 try {
   await db.query(
@@ -148,6 +150,77 @@ try {
     FOREIGN KEY(case_id) REFERENCES cases(id),
     FOREIGN KEY(actor_id) REFERENCES users(id) ON DELETE SET NULL
   )`);
+  await db.query(`CREATE TABLE IF NOT EXISTS case_versions (
+    event_id INT PRIMARY KEY, kind ENUM('evaluation','document') NOT NULL, payload JSON NOT NULL,
+    FOREIGN KEY(event_id) REFERENCES case_events(id) ON DELETE CASCADE
+  )`);
+  // Preserva únicamente el contenido vigente al migrar; no inventa revisiones perdidas.
+  const [caseIds] = await db.query("SELECT id FROM cases ORDER BY id");
+  for (const item of caseIds) {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.execute("SELECT id FROM cases WHERE id=? FOR UPDATE", [
+        item.id,
+      ]);
+      const [existing] = await connection.execute(
+        "SELECT DISTINCT v.kind FROM case_versions v JOIN case_events e ON e.id=v.event_id WHERE e.case_id=?",
+        [item.id],
+      );
+      const kinds = new Set(existing.map((v) => v.kind));
+      if (!kinds.has("evaluation")) {
+        const [rows] = await connection.execute(
+          "SELECT * FROM evaluations WHERE case_id=?",
+          [item.id],
+        );
+        if (rows.length) {
+          const row = rows[0];
+          const eventId = await recordEvent(
+            connection,
+            item.id,
+            "evaluation.baseline",
+            null,
+            { revision: row.revision },
+          );
+          await recordVersion(
+            connection,
+            eventId,
+            "evaluation",
+            evaluationPayload(row),
+          );
+        }
+      }
+      if (!kinds.has("document")) {
+        const [rows] = await connection.execute(
+          "SELECT id,original_name,page_count,analysis FROM documents WHERE case_id=? AND analysis IS NOT NULL",
+          [item.id],
+        );
+        if (rows.length) {
+          const row = rows[0];
+          const eventId = await recordEvent(
+            connection,
+            item.id,
+            "document.baseline",
+          );
+          await recordVersion(connection, eventId, "document", {
+            document_id: row.id,
+            name: row.original_name,
+            pages: row.page_count,
+            analysis:
+              typeof row.analysis === "string"
+                ? JSON.parse(row.analysis)
+                : row.analysis,
+          });
+        }
+      }
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
   console.log(
     "Esquema MySQL listo (Laboral, documentos y aclaraciones; conserva casos existentes).",
   );
