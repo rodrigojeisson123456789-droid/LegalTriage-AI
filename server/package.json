@@ -9,7 +9,8 @@
     "db:init": "node src/setup.js",
     "user:create": "node src/create-user.js",
     "gemini:check": "node scripts/gemini-check.js",
-    "gemini:models": "node scripts/gemini-models.js"
+    "gemini:models": "node scripts/gemini-models.js",
+    "gemini:text": "node scripts/gemini-text.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

@@ -6,6 +6,8 @@ const pdf = await PDFDocument.create();
 pdf
   .addPage()
   .drawText("Contrato de arrendamiento. Fecha de firma: 10 enero 2026.");
+const model=process.env.GEMINI_MODEL||'gemini-2.5-flash';
+if(/^[A-Za-z0-9._-]{1,120}$/.test(model))console.log(`Modelo efectivo: ${model}`);
 console.log("Comprobando Gemini con un PDF ficticio de una página…");
 const result = await analyzeDocument(
   { buffer: Buffer.from(await pdf.save()), mime: "application/pdf", pages: 1 },
