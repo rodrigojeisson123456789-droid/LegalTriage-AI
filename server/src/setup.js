@@ -105,6 +105,9 @@ try {
   await db.query(
     `CREATE TABLE IF NOT EXISTS lawyer_specialties (user_id INT NOT NULL,specialty ENUM('Civil','Corporativo','Familia','Bancario','Laboral') NOT NULL,PRIMARY KEY(user_id,specialty),FOREIGN KEY(user_id) REFERENCES users(id))`,
   );
+  await db.query(
+    `CREATE TABLE IF NOT EXISTS notifications (id INT AUTO_INCREMENT PRIMARY KEY,case_id INT NOT NULL,kind ENUM('clarification','response') NOT NULL,token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,status ENUM('pending','accepted','failed','uncertain') NOT NULL,created_by INT NOT NULL,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(kind,token_hash),FOREIGN KEY(case_id) REFERENCES cases(id),FOREIGN KEY(created_by) REFERENCES users(id))`,
+  );
   console.log(
     "Esquema MySQL listo (Laboral, documentos y aclaraciones; conserva casos existentes).",
   );

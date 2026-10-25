@@ -891,3 +891,7 @@ td small {
 
 .team-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:22px;margin-bottom:25px}.team-member{padding:25px}.team-member fieldset{border:0;padding:20px 0 0}.team-member legend{font-size:11px;color:#6c8274;padding-top:20px}.team-areas{display:flex;gap:16px;flex-wrap:wrap;margin:15px 0}.team-areas label{display:flex;flex-direction:row;align-items:center;gap:6px}.team-areas input{width:14px;accent-color:#28664f}.team-member>.help{margin-top:15px}@media(max-width:700px){nav{flex-wrap:wrap}}
 .team-member .title-row>div{min-width:0}.team-member .help{overflow-wrap:anywhere}.team-member .title-row{gap:12px}
+
+.email-notification{padding:22px;border:1px solid #dce8df;border-radius:8px;margin:22px 0;background:#f4f8f5;font-size:12px}.email-notification>p{margin:12px 0;overflow-wrap:anywhere}.email-preview{margin-top:20px;border-top:1px solid #dce8df;padding-top:20px}.email-preview pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;margin:15px 0}.email-notification details{margin-top:20px}.email-notification li{font-size:11px;line-height:1.8;list-style:disc;margin:10px 0 0 16px}
+
+button:disabled{cursor:not-allowed}

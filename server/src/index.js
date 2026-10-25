@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { notifications } from "./notifications.js";
+import { MailConfigError } from "./mail.js";
 import { assignment, autoAssign } from "./assignment.js";
 import { evaluations, publicResponses } from "./evaluations.js";
 import express from "express";
@@ -180,6 +182,7 @@ app.use("/api", (req, res, next) => {
 app.use("/api/cases", privateClarifications);
 app.use("/api/cases", evaluations);
 app.use("/api", assignment);
+app.use("/api", notifications);
 app.get("/api/me", (req, res) =>
   res.json({ id: req.user.id, name: req.user.name }),
 );
@@ -354,6 +357,8 @@ app.post("/api/deadlines", async (req, res) => {
   }
 });
 app.use((err, req, res, next) => {
+  if (err instanceof MailConfigError)
+    return res.status(503).json({ error: err.message });
   if (err instanceof multer.MulterError)
     return res.status(400).json({
       error:

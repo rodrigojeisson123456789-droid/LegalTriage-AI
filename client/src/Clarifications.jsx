@@ -1,3 +1,4 @@
+import EmailNotification from "./EmailNotification.jsx";
 import React, { useEffect, useState, useRef } from "react";
 const date = (v) =>
   new Intl.DateTimeFormat("es-PE", {
@@ -132,7 +133,7 @@ export function ClarificationManager({ caseId, api, onClose, onRefresh }) {
               <div className="notice link-notice">
                 <div>
                   <strong>
-                    Solicitud creada. Aún no se ha enviado al cliente.
+                    Solicitud creada. El enlace no se envía automáticamente.
                   </strong>
                   <label>
                     Enlace privado
@@ -160,6 +161,14 @@ export function ClarificationManager({ caseId, api, onClose, onRefresh }) {
                   )}
                 </div>
               </div>
+            )}
+            {link && (
+              <EmailNotification
+                caseId={caseId}
+                kind="clarification"
+                link={link}
+                api={api}
+              />
             )}
             <h3>Historial · últimas 20 solicitudes</h3>
             {!rows.length && (

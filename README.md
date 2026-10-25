@@ -148,3 +148,29 @@ Un fallo de Gemini, categoría Indeterminado o ausencia de abogados disponibles 
 API privada: `GET /api/team`, `PUT /api/team/:id` y `POST /api/cases/:id/auto-assign`. La creación pública de casos no expone datos del abogado. No se envía ninguna notificación externa al asignar.
 
 Prueba de integración: desde `server/`, `node scripts/assignment-smoke.js`. Requiere MySQL de prueba sin otros perfiles Laboral disponibles. Usa una API temporal en 3002 y Gemini simulado; verifica reparto por carga, empates, solicitudes concurrentes, disponibilidad, casos cerrados, falta de clasificación y cambios manuales. Crea y limpia sus propios usuarios, perfiles y casos. No consulta a Google.
+
+## Notificaciones por Gmail
+
+En Aclaraciones o Evaluación, crea el enlace privado y usa la nueva sección **Notificación por Gmail**. El destinatario es el correo guardado en el caso; el API no acepta destinatarios arbitrarios. El mensaje contiene solo un aviso y el enlace, nunca el PDF ni las conclusiones internas. La respuesta debe estar aprobada y el enlace debe seguir vigente. No se envían mensajes automáticamente al guardar, aprobar o asignar.
+
+Por defecto `MAIL_MODE=preview`: permite inspeccionar asunto, destinatario y cuerpo **sin contactar Gmail ni registrar un envío**. Para pruebas reales utiliza un caso cuyo correo sea tu propio Gmail. La vista previa y los enlaces son privados: no publiques capturas con tokens vigentes.
+
+Configuración local en `server/.env` (no compartir ni versionar):
+
+```dotenv
+MAIL_MODE=preview
+SMTP_USER=tu_cuenta@gmail.com
+SMTP_APP_PASSWORD=
+PUBLIC_APP_URL=http://localhost:5173
+```
+
+1. En tu cuenta Google activa verificación en dos pasos y crea una **contraseña de aplicación** para LegalTriage en https://myaccount.google.com/apppasswords. Algunas cuentas administradas o con restricciones no ofrecen esta opción; no desactives protecciones para forzarla.
+2. Introduce esa contraseña únicamente en `SMTP_APP_PASSWORD`. No uses la contraseña habitual de tu cuenta. Se admiten los espacios de agrupación que muestra Google.
+3. Cambia `MAIL_MODE=gmail`, guarda y ejecuta `npm run mail:check`. Comprueba conexión TLS y autenticación, **sin enviar correo**. Gmail SMTP usa `smtp.gmail.com:465` con TLS y verificación de certificados.
+4. Reinicia `npm run dev`. Crea el enlace desde el panel, comprueba el destinatario, marca la confirmación y pulsa Enviar. La aceptación por Gmail no confirma entrega ni lectura; revisa también Spam.
+
+Mientras PUBLIC_APP_URL sea localhost, el enlace del correo solo abre la aplicación en la laptop local. Para clientes externos debes publicar el frontend y API bajo un origen HTTPS y establecerlo como PUBLIC_APP_URL (sin rutas ni parámetros). La integración no publica el sitio ni requiere un dominio para la vista previa local. El servidor genera el enlace del correo desde esta configuración, no desde un destino proporcionado por el navegador.
+
+Se registra un estado por enlace: pending, accepted, failed (autenticación rechazada) o uncertain. Se bloquean duplicados aceptados, pendientes y sin confirmar. Un fallo de autenticación permite reintentar después de corregir la configuración. Ante un error de red, timeout o interrupción del proceso no se puede asegurar si hubo envío: revisar el buzón antes de crear otro enlace. No hay reintentos automáticos ni garantía de entrega única de extremo a extremo. Crear otro enlace revoca el anterior según las reglas de aclaraciones/respuestas; evitar hacerlo mientras haya un correo en curso. El registro guarda el hash del token, no el cuerpo ni la contraseña. Los borradores y notas internas siguen siendo privados.
+
+Actualizar con `npm ci` y `npm run db:init` instala Nodemailer y crea `notifications`, conservando los casos. API privada: `GET /api/mail/config`, `GET/POST /api/cases/:id/notifications`. El botón permite vista previa o envío según MAIL_MODE. `npm test` cubre configuración y mensajes; desde `server/`, `node scripts/mail-smoke.js` usa MySQL real y Gmail simulado para validar permisos, enlaces, destinatario, duplicados y privacidad. No valida credenciales reales; ejecutar en una base de prueba, usa el puerto 3002 y limpia sus datos.

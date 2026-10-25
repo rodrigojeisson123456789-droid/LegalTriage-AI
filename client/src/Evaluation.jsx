@@ -1,3 +1,4 @@
+import EmailNotification from "./EmailNotification.jsx";
 import React, { useEffect, useRef, useState } from "react";
 const dates = (value) =>
   new Intl.DateTimeFormat("es-PE", {
@@ -307,7 +308,7 @@ export default function Evaluation({
                           `${window.location.origin}/#respuesta=${result.token}`,
                         );
                         setNotice(
-                          "Enlace creado. No se ha enviado ninguna notificación al cliente.",
+                          "Enlace creado. Usa la sección de notificaciones para preparar o enviar el correo.",
                         );
                       })
                     }
@@ -358,6 +359,14 @@ export default function Evaluation({
                       )}
                     </div>
                   </div>
+                )}
+                {link && (
+                  <EmailNotification
+                    caseId={caseId}
+                    kind="response"
+                    link={link}
+                    api={api}
+                  />
                 )}
               </>
             ) : (

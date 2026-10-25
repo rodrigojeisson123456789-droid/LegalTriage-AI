@@ -15,7 +15,8 @@
     "gemini:models": "npm run gemini:models -w server",
     "gemini:text": "npm run gemini:text -w server",
     "gemini:curl": "npm run gemini:curl -w server",
-    "gemini:interactions": "npm run gemini:interactions -w server"
+    "gemini:interactions": "npm run gemini:interactions -w server",
+    "mail:check": "npm run mail:check -w server"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

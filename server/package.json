@@ -12,7 +12,8 @@
     "gemini:models": "node scripts/gemini-models.js",
     "gemini:text": "node scripts/gemini-text.js",
     "gemini:curl": "node scripts/gemini-curl.js",
-    "gemini:interactions": "node scripts/gemini-interactions.js"
+    "gemini:interactions": "node scripts/gemini-interactions.js",
+    "mail:check": "node scripts/mail-check.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -25,6 +26,7 @@
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.5.0",
     "mysql2": "^3.14.0",
+    "nodemailer": "^10.2.1",
     "pdf-lib": "^1.17.1",
     "zod": "^4.6.7"
   }
