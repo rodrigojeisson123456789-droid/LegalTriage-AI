@@ -82,3 +82,9 @@ Endpoints adicionales, todos privados:
 - `POST /api/documents/:id/analyze`: reintento de Gemini limitado por frecuencia.
 
 Pruebas: `npm test` incluye validación documental y Gemini con respuestas simuladas. Desde `server/`, `node scripts/documents-smoke.js` inicia una API temporal en puerto 3002, usa MySQL real, comprueba persistencia, acceso privado y fallos de carga, y elimina su cuenta y datos de prueba. No contacta Gemini ni necesita una clave. No usar simultáneamente con otra API en 3002.
+
+### Diagnosticar Gemini sin compartir credenciales
+
+Desde la raíz ejecuta `npm run gemini:check`. Lee `server/.env` y envía exclusivamente un PDF ficticio generado en memoria, no archivos de clientes. Imprime un diagnóstico conocido (clave rechazada, permisos, API deshabilitada, cuota 429, modelo 404, solicitud rechazada, conexión, timeout o respuesta inválida) sin mostrar la clave ni el cuerpo de error de Google. Puede consumir cuota de Gemini. Un fallo termina con código 1; conserva las comprobaciones de TLS.
+
+Al reintentar un documento, el panel actualiza el motivo del último fallo. Un análisis válido anterior se conserva aunque un intento posterior falle. Cambiar `server/.env` exige reiniciar el backend; no es necesario volver a subir el documento. Un mensaje de cuota no implica por sí solo que debas pagar: revisa los límites y las opciones disponibles en el proyecto antes de decidir.

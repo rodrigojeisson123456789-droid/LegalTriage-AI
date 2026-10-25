@@ -98,9 +98,14 @@ test("análisis envía archivo y consulta y valida referencias, sin crear plazos
         "unavailable",
       );
     assert.equal(
-      (await analyzeDocument(document, "consulta", async () => ({ ok: false })))
-        .reason,
-      "provider_error",
+      (
+        await analyzeDocument(document, "consulta", async () => ({
+          ok: false,
+          status: 502,
+          json: async () => ({}),
+        }))
+      ).reason,
+      "provider_unavailable",
     );
     assert.equal(
       (
@@ -126,5 +131,62 @@ test("sin clave no contacta Gemini", async () => {
     assert.equal(result.analysis, null);
   } finally {
     if (previous !== undefined) process.env.GEMINI_API_KEY = previous;
+  }
+});
+
+test("diagnósticos distinguen errores de Google, red, timeout y respuestas bloqueadas", async () => {
+  const previous = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = "test-only";
+  try {
+    const document = { buffer: await pdf(), mime: "application/pdf", pages: 1 };
+    for (const [status, details, reason] of [
+      [400, [{ reason: "API_KEY_INVALID" }], "key_invalid"],
+      [401, [], "key_invalid"],
+      [403, [], "permission_denied"],
+      [403, [{ reason: "SERVICE_DISABLED" }], "service_disabled"],
+      [403, [{ reason: "BILLING_DISABLED" }], "billing_disabled"],
+      [429, [], "quota_exceeded"],
+      [404, [], "model_unavailable"],
+      [400, [], "request_rejected"],
+      [503, [], "provider_unavailable"],
+    ]) {
+      const result = await analyzeDocument(document, "consulta", async () => ({
+        ok: false,
+        status,
+        json: async () => ({
+          error: { details, message: "NO EXPONER CLAVE NI CUERPO" },
+        }),
+      }));
+      assert.equal(result.reason, reason);
+      assert.equal(JSON.stringify(result).includes("NO EXPONER"), false);
+    }
+    assert.equal(
+      (
+        await analyzeDocument(document, "consulta", async () => {
+          throw new TypeError("fetch failed");
+        })
+      ).reason,
+      "network_error",
+    );
+    assert.equal(
+      (
+        await analyzeDocument(document, "consulta", async () => {
+          throw new DOMException("timeout", "TimeoutError");
+        })
+      ).reason,
+      "timeout",
+    );
+    assert.equal(
+      (
+        await analyzeDocument(document, "consulta", async () => ({
+          ok: true,
+          json: async () => ({ promptFeedback: { blockReason: "SAFETY" } }),
+        }))
+      ).reason,
+      "response_blocked",
+    );
+  } finally {
+    if (previous === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = previous;
   }
 });

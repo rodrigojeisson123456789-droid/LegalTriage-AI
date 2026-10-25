@@ -12,6 +12,7 @@ import {
   analyzeDocument,
   DocumentError,
   MAX_DOCUMENT_BYTES,
+  analysisErrorMessage,
 } from "./documents.js";
 import { db } from "./db.js";
 import { caseSchema, deadlineSchema, classify, urgency } from "./domain.js";
@@ -110,14 +111,12 @@ app.post(
     } finally {
       connection.release();
     }
-    res
-      .status(201)
-      .json({
-        id,
-        ...ai,
-        status: "Nuevo",
-        document_status: result?.status || null,
-      });
+    res.status(201).json({
+      id,
+      ...ai,
+      status: "Nuevo",
+      document_status: result?.status || null,
+    });
   },
 );
 app.post("/api/login", limited, async (req, res) => {
@@ -182,17 +181,18 @@ app.get("/api/cases/:id/documents", async (req, res) => {
     "SELECT id,original_name,mime_type,page_count,analysis_status,failure_reason,analysis,analyzed_at FROM documents WHERE case_id=?",
     [id],
   );
-  res
-    .set("Cache-Control", "no-store")
-    .json(
-      rows.map((row) => ({
-        ...row,
-        analysis:
-          typeof row.analysis === "string"
-            ? JSON.parse(row.analysis)
-            : row.analysis,
-      })),
-    );
+  res.set("Cache-Control", "no-store").json(
+    rows.map((row) => ({
+      ...row,
+      failure_message: row.failure_reason
+        ? analysisErrorMessage(row.failure_reason)
+        : null,
+      analysis:
+        typeof row.analysis === "string"
+          ? JSON.parse(row.analysis)
+          : row.analysis,
+    })),
+  );
 });
 app.get("/api/documents/:id/download", async (req, res) => {
   const id = z.coerce.number().int().positive().parse(req.params.id);
@@ -223,16 +223,20 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
     { buffer: row.content, mime: row.mime_type, pages: row.page_count },
     row.description,
   );
-  // Un reintento fallido conserva un análisis anterior válido.
-  if (result.status !== "analyzed")
+  // Conserva el análisis anterior, pero registra el diagnóstico del último intento.
+  if (result.status !== "analyzed") {
+    await db.execute("UPDATE documents SET failure_reason=? WHERE id=?", [
+      result.reason,
+      id,
+    ]);
+    console.warn("Gemini analysis unavailable:", result.reason);
     return res
       .status(503)
       .json({
-        error:
-          result.reason === "missing_key"
-            ? "Configura GEMINI_API_KEY en el servidor y reinícialo."
-            : "Gemini no pudo completar el análisis. Intenta nuevamente más tarde.",
+        error: analysisErrorMessage(result.reason),
+        reason: result.reason,
       });
+  }
   const connection = await db.getConnection();
   try {
     await connection.beginTransaction();
@@ -297,23 +301,19 @@ app.post("/api/deadlines", async (req, res) => {
 });
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError)
-    return res
-      .status(400)
-      .json({
-        error:
-          err.code === "LIMIT_FILE_SIZE"
-            ? "El archivo supera el límite de 8 MB."
-            : "Adjunta un solo documento y respeta los límites del formulario.",
-      });
+    return res.status(400).json({
+      error:
+        err.code === "LIMIT_FILE_SIZE"
+          ? "El archivo supera el límite de 8 MB."
+          : "Adjunta un solo documento y respeta los límites del formulario.",
+    });
   if (err instanceof DocumentError)
     return res.status(400).json({ error: err.message });
   if (err instanceof z.ZodError)
-    return res
-      .status(400)
-      .json({
-        error: "Revisa los datos ingresados",
-        details: err.issues.map((i) => i.message),
-      });
+    return res.status(400).json({
+      error: "Revisa los datos ingresados",
+      details: err.issues.map((i) => i.message),
+    });
   console.error("Request failed:", err.code || err.name);
   res
     .status(500)

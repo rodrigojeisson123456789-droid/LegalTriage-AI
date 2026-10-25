@@ -36,6 +36,10 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
       await onRefresh();
     } catch (e) {
       setError(e.message);
+      // Actualiza el diagnóstico guardado sin ocultar el error del reintento.
+      try {
+        setDocuments(await api(`/cases/${caseId}/documents`));
+      } catch {}
     } finally {
       setBusy(false);
     }
@@ -111,7 +115,9 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
             {doc.analysis_status !== "analyzed" && (
               <div className="notice">
                 Pendiente de análisis.{" "}
-                {reasons[doc.failure_reason] || "Requiere revisión manual."}
+                {doc.failure_message ||
+                  reasons[doc.failure_reason] ||
+                  "Requiere revisión manual."}
               </div>
             )}
             {doc.analysis && (

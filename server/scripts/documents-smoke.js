@@ -82,6 +82,10 @@ try {
   assert.equal(rows[0].analysis, null);
   assert.equal(rows[0].content, undefined);
   const id = rows[0].id;
+  await db.execute("UPDATE documents SET failure_reason=? WHERE id=?", [
+    "provider_error",
+    id,
+  ]);
   assert.equal((await fetch(base + `/documents/${id}/download`)).status, 401);
   assert.equal(
     (await fetch(base + `/documents/${id}/analyze`, { method: "POST" })).status,
@@ -145,6 +149,13 @@ try {
     1,
     "Los rechazos no deben crear casos parciales",
   );
+  const refreshed = await (
+    await fetch(base + `/cases/${record.id}/documents`, {
+      headers: { Cookie: cookie },
+    })
+  ).json();
+  assert.equal(refreshed[0].failure_reason, "missing_key");
+  assert.match(refreshed[0].failure_message, /Configura GEMINI_API_KEY/);
   const previous = { summary: "Análisis anterior válido" };
   await db.execute(
     "UPDATE documents SET analysis_status=?,analysis=? WHERE id=?",
