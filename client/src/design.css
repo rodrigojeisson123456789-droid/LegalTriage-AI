@@ -1,9 +1,9 @@
 /* Shared visual language: readable type, warm surfaces and clear focus states. */
 :root {
-  --ink: #183e34;
-  --muted: #586f64;
-  --green: #23634f;
-  --line: #dce5df;
+  --ink: #322d24;
+  --muted: #68655f;
+  --accent: #4e4738;
+  --line: #e2e1df;
   --paper: #f6f7f3;
   --gold: #ad8a4c;
   background: var(--paper);
@@ -21,29 +21,29 @@ textarea {
 }
 button:focus-visible,
 a:focus-visible {
-  outline: 3px solid #397d63;
+  outline: 3px solid #675f4f;
   outline-offset: 4px;
 }
 .primary {
-  background: var(--green);
+  background: var(--accent);
   border-radius: 9px;
   min-height: 44px;
   font-size: 13px;
   font-weight: 650;
-  box-shadow: 0 2px 3px #173e3410;
+  box-shadow: 0 2px 3px #312d2410;
 }
 .primary:hover:not(:disabled) {
-  background: #174c3b;
-  box-shadow: 0 4px 10px #173e3420;
+  background: #3a3429;
+  box-shadow: 0 4px 10px #312d2420;
 }
 .card {
   border-color: var(--line);
   border-radius: 15px;
-  box-shadow: 0 4px 18px #1d443508;
+  box-shadow: 0 4px 18px #37332a08;
 }
 .shell label {
   font-size: 13px;
-  color: #304d40;
+  color: #444039;
   line-height: 1.5;
 }
 .shell input,
@@ -52,18 +52,18 @@ a:focus-visible {
   font-size: 14px;
   min-height: 44px;
   border-radius: 8px;
-  border-color: #ccd9d0;
+  border-color: #d5d3d0;
   padding: 12px 13px;
 }
 .shell input::placeholder,
 .shell textarea::placeholder {
-  color: #74877c;
+  color: #817f7a;
 }
 .shell input:focus,
 .shell textarea:focus,
 .shell select:focus {
-  border-color: #397d63;
-  outline: 2px solid #b6d7c580;
+  border-color: #675f4f;
+  outline: 2px solid #ccc8c180;
   outline-offset: 1px;
 }
 .shell input[type="checkbox"],
@@ -72,7 +72,7 @@ a:focus-visible {
   width: 17px;
   height: 17px;
   padding: 0;
-  accent-color: var(--green);
+  accent-color: var(--accent);
 }
 .shell .help,
 .shell .intro {
@@ -96,7 +96,7 @@ a:focus-visible {
   font-size: 10px;
   font-weight: 650;
   letter-spacing: 1.8px;
-  color: #37725b;
+  color: #5f584a;
 }
 .shell .notice,
 .shell .error {
@@ -107,7 +107,7 @@ a:focus-visible {
 }
 .shell .consent {
   font-size: 12px;
-  color: #516b5c;
+  color: #635f59;
   line-height: 1.75;
   gap: 10px;
 }
@@ -117,7 +117,7 @@ a:focus-visible {
 }
 .shell footer {
   font-size: 11px;
-  color: #64786c;
+  color: #726f6b;
   gap: 16px;
 }
 /* The public form and sign-in get a calm, full-width entry layout. */
@@ -159,12 +159,12 @@ a:focus-visible {
   padding: 0;
   font-size: 12px;
   align-items: center;
-  color: #3a6350;
+  color: #565147;
 }
 .shell-public .secure small,
 .shell-login .secure small {
   font-size: 11px;
-  color: #687d70;
+  color: #76746f;
 }
 .shell-public > .main,
 .shell-login > .main {
@@ -212,12 +212,12 @@ a:focus-visible {
   height: 47px;
   border-radius: 12px;
   flex-shrink: 0;
-  background: #edf5ee;
+  background: #f2f1f0;
 }
 .shell-public .step {
   font-size: 11px;
-  color: #627b69;
-  background: #f1f5f0;
+  color: #73706a;
+  background: #f3f3f2;
   padding: 7px 10px;
   border-radius: 30px;
   white-space: nowrap;
@@ -227,14 +227,14 @@ a:focus-visible {
 }
 .shell-public .section-label {
   font-size: 11px;
-  color: #538264;
+  color: #736d62;
   gap: 12px;
   margin-bottom: 24px;
 }
 .shell-public .section-label span {
   font-size: 10px;
   letter-spacing: 1.5px;
-  color: #4d6957;
+  color: #605d56;
 }
 .shell-public .fields {
   gap: 22px;
@@ -247,7 +247,7 @@ a:focus-visible {
 }
 .shell-public .attachment-field {
   border-radius: 10px;
-  background: #f6f9f5;
+  background: #f8f7f6;
   padding: 18px;
 }
 .shell-public input[type="file"] {
@@ -258,8 +258,8 @@ a:focus-visible {
 }
 .shell-public input::file-selector-button {
   font: inherit;
-  color: var(--green);
-  background: #edf4ec;
+  color: var(--accent);
+  background: #f1f0ef;
   border: 0;
   border-radius: 5px;
   padding: 8px 10px;
@@ -269,7 +269,7 @@ a:focus-visible {
 .shell-public .form-footer > span {
   font-size: 11px;
   max-width: 200px;
-  color: #5f7867;
+  color: #706d67;
   line-height: 1.5;
 }
 .shell-public .form-footer .primary {
@@ -277,14 +277,14 @@ a:focus-visible {
   font-size: 14px;
 }
 .shell-public .guidance {
-  background: #e9f0e7;
-  border: 1px solid #d7e1d3;
+  background: #edecea;
+  border: 1px solid #dcdbd8;
   border-radius: 15px;
   padding: 30px 26px;
 }
 .shell-public .guidance .eyebrow {
   font-size: 10px;
-  color: #527055;
+  color: #66635c;
 }
 .shell-public .guidance h2 {
   font-family: Georgia, serif;
@@ -292,12 +292,12 @@ a:focus-visible {
   font-weight: 400;
   line-height: 1.25;
   letter-spacing: -0.6px;
-  color: #284b37;
+  color: #403b33;
 }
 .shell-public .guidance > p {
   font-size: 13px;
   line-height: 1.85;
-  color: #506a55;
+  color: #625e58;
   margin: 20px 0 28px;
 }
 .shell-public .process {
@@ -309,21 +309,21 @@ a:focus-visible {
   height: 31px;
   font-size: 11px;
   background: #f7f9f2;
-  color: #446c4b;
+  color: #5f5a51;
 }
 .shell-public .process h3 {
   font-size: 13px;
   margin: 1px 0 5px;
-  color: #34563e;
+  color: #4b473f;
 }
 .shell-public .process p {
   font-size: 12px;
   line-height: 1.7;
-  color: #536d59;
+  color: #65615b;
 }
 .shell-public .guidance-foot {
   font-size: 11px;
-  color: #536e55;
+  color: #65625c;
 }
 .shell-public .specialties {
   padding: 26px 4px;
@@ -337,12 +337,12 @@ a:focus-visible {
   padding: 8px 11px;
   border-radius: 6px;
   background: #fff;
-  color: #41624d;
+  color: #57534c;
 }
 .shell-public .specialties p {
   font-size: 12px;
   line-height: 1.75;
-  color: #5e7362;
+  color: #6c6a65;
 }
 .shell-public .success {
   padding: 46px 30px;
@@ -360,12 +360,12 @@ a:focus-visible {
   border-radius: 20px;
   overflow: hidden;
   background: #fff;
-  box-shadow: 0 12px 45px #1d44350a;
+  box-shadow: 0 12px 45px #37332a0a;
 }
 .login-story {
   padding: 48px;
-  background: #193f33;
-  color: #eff5ea;
+  background: #332e25;
+  color: #f1f0ee;
   position: relative;
 }
 .story-symbol {
@@ -373,13 +373,13 @@ a:focus-visible {
   place-items: center;
   width: 72px;
   height: 72px;
-  border: 1px solid #76948270;
+  border: 1px solid #8a878070;
   border-radius: 18px;
   color: #d7c391;
   margin-bottom: 48px;
 }
 .shell-login .login-story .eyebrow {
-  color: #b7cfba;
+  color: #c7c4bf;
   font-size: 10px;
 }
 .shell-login .login-story h2 {
@@ -393,7 +393,7 @@ a:focus-visible {
 }
 .login-story > p {
   font-size: 14px;
-  color: #c0d1c3;
+  color: #cbc9c6;
   line-height: 1.9;
   margin-bottom: 30px;
   max-width: 350px;
@@ -410,25 +410,25 @@ a:focus-visible {
   gap: 12px;
   align-items: center;
   font-size: 13px;
-  color: #e0ebdf;
+  color: #e7e6e3;
 }
 .login-story li svg {
-  color: #b8cfb9;
+  color: #c8c5bf;
   flex-shrink: 0;
 }
 .story-signature {
   margin-top: 48px;
   padding-top: 22px;
-  border-top: 1px solid #8da68f40;
+  border-top: 1px solid #9e9b9540;
   font-size: 10px;
   letter-spacing: 1.5px;
-  color: #d0ddc9;
+  color: #d6d4d0;
 }
 .story-signature span {
   display: block;
   font-size: 12px;
   letter-spacing: 0;
-  color: #b7cdbb;
+  color: #c6c3be;
   margin-top: 8px;
 }
 .shell-login .login {
@@ -475,11 +475,11 @@ a:focus-visible {
   height: 40px;
   display: grid;
   place-items: center;
-  color: #567461;
+  color: #6a6760;
   border-radius: 6px;
 }
 .password-visibility:hover {
-  background: #edf4ec;
+  background: #f1f0ef;
 }
 .shell-login .login .primary {
   width: 100%;
@@ -501,7 +501,7 @@ a:focus-visible {
 .login-note svg {
   flex-shrink: 0;
   margin-top: 3px;
-  color: #4b7258;
+  color: #656158;
 }
 /* Workspace and private dialogs: denser than the entry pages, with larger type. */
 .shell-team aside {
@@ -516,7 +516,7 @@ a:focus-visible {
 }
 .shell-team .workspace {
   font-size: 10px;
-  color: #64786b;
+  color: #726f6b;
   margin-top: 45px;
 }
 .shell-team nav {
@@ -527,23 +527,23 @@ a:focus-visible {
   padding: 14px;
   min-height: 46px;
   border-radius: 9px;
-  color: #526c5c;
+  color: #64605a;
 }
 .shell-team nav button:hover {
-  background: #f3f6f0;
+  background: #f4f3f2;
 }
 .shell-team nav button.active {
-  background: #e6f0e7;
-  color: #205e46;
-  box-shadow: inset 3px 0 #347a58;
+  background: #edece9;
+  color: #4a4234;
+  box-shadow: inset 3px 0 #635b4b;
 }
 .shell-team header {
   height: 76px;
   font-size: 12px;
-  color: #687b70;
+  color: #75736e;
 }
 .shell-team header strong {
-  color: #385c48;
+  color: #504c44;
 }
 .shell-team .header-note {
   font-size: 11px;
@@ -563,19 +563,19 @@ a:focus-visible {
   padding: 24px;
   position: relative;
   overflow: hidden;
-  border-top: 3px solid #d4e4d4;
+  border-top: 3px solid #dfddd9;
 }
 .shell-team .stats .card:first-child {
-  border-top-color: #34795a;
+  border-top-color: #635a4a;
 }
 .shell-team .stats span {
   font-size: 12px;
-  color: #536c5b;
+  color: #64615b;
 }
 .shell-team .stats strong {
   font-size: 34px;
   font-weight: 700;
-  color: #214c36;
+  color: #3e392f;
   margin-top: 16px;
 }
 .shell-team .table-heading {
@@ -589,8 +589,8 @@ a:focus-visible {
 }
 .shell-team th {
   font-size: 10px;
-  color: #496651;
-  background: #eef4ec;
+  color: #5d5952;
+  background: #f1f0ef;
   letter-spacing: 1px;
   padding: 17px 18px;
 }
@@ -603,7 +603,7 @@ a:focus-visible {
 }
 .shell-team td small {
   font-size: 11px;
-  color: #62796a;
+  color: #726f69;
   line-height: 1.7;
 }
 .shell-team td select {
@@ -617,7 +617,7 @@ a:focus-visible {
 .shell-team .text-button {
   font-size: 12px;
   min-height: 32px;
-  color: #2e7351;
+  color: #5d5444;
   line-height: 1.7;
   text-align: left;
 }
@@ -642,23 +642,23 @@ a:focus-visible {
 }
 .shell-team .team-member legend {
   font-size: 12px;
-  color: #54725d;
+  color: #68655e;
 }
 .shell-team .team-areas {
   gap: 10px;
 }
 .shell-team .team-areas label {
   border: 1px solid var(--line);
-  background: #f7faf5;
+  background: #f8f8f7;
   padding: 9px 12px;
   border-radius: 7px;
   gap: 8px;
   min-height: 40px;
 }
 .shell-team .team-areas label:has(input:checked) {
-  background: #eaf3e7;
-  border-color: #7ba789;
-  color: #25583b;
+  background: #efeeeb;
+  border-color: #999389;
+  color: #474136;
 }
 .shell-team .team-role {
   padding: 20px 0;
@@ -673,16 +673,16 @@ a:focus-visible {
   border-radius: 15px;
 }
 .shell-team .overlay {
-  background: #15382d80;
+  background: #2d282080;
   backdrop-filter: blur(3px);
 }
 .shell-team .document-dialog {
   width: min(860px, 100%);
   max-height: 90dvh;
   padding: 30px;
-  border: 1px solid #d9e3d7;
+  border: 1px solid #dfdedb;
   border-radius: 16px;
-  box-shadow: 0 24px 80px #0d2c322b;
+  box-shadow: 0 24px 80px #25211a2b;
 }
 .shell-team .title-row {
   gap: 18px;
@@ -691,7 +691,7 @@ a:focus-visible {
   min-width: 38px;
   min-height: 38px;
   border-radius: 50%;
-  background: #f0f5ed;
+  background: #f2f1f0;
 }
 .shell-team .analysis-text,
 .shell-team .document-result li,
@@ -706,7 +706,7 @@ a:focus-visible {
 .shell-team .case-history time,
 .shell-team .case-history small {
   font-size: 12px;
-  color: #577261;
+  color: #696660;
 }
 .shell-team .version-content {
   padding: 22px;
@@ -731,7 +731,7 @@ a:focus-visible {
 .reply-card {
   border-radius: 16px;
   padding: 32px;
-  box-shadow: 0 8px 30px #1b493410;
+  box-shadow: 0 8px 30px #3a352a10;
 }
 .reply-card h2 {
   font-size: 23px;
@@ -1008,4 +1008,195 @@ a:focus-visible {
 }
 .shell-team .team-grid {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+/* Núñez Saldaña: charcoal and gold, sampled approximately from the supplied reference. */
+:root {
+  --ink: #242622;
+  --muted: #69675f;
+  --accent: #20241f;
+  --line: #e1ded5;
+  --paper: #f7f6f2;
+  --gold: #dba34d;
+}
+.shell-public > aside,
+.shell-login > aside,
+.shell-team aside {
+  background: #151916;
+  border-color: #33352e;
+}
+.firm-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+.brand .firm-name {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: #fff;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.brand .firm-brand small {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 11px;
+  color: #e0ac58;
+  letter-spacing: 2px;
+  margin-top: 0;
+  font-weight: 500;
+}
+.brand .product-name {
+  font-family: "DM Sans", sans-serif;
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: #c7c8bd;
+  font-weight: 400;
+  margin-top: 4px;
+}
+.shell-public .secure,
+.shell-login .secure {
+  color: #e4dbc7;
+}
+.shell-public .secure small,
+.shell-login .secure small {
+  color: #c4c4b8;
+}
+.shell-public .secure svg,
+.shell-login .secure svg {
+  color: #dba34d;
+}
+.shell-team .workspace {
+  color: #d0b98f;
+}
+.shell-team nav button {
+  color: #deded3;
+}
+.shell-team nav button:hover {
+  background: #282c26;
+}
+.shell-team nav button.active {
+  background: #353022;
+  color: #f2ce8d;
+  box-shadow: inset 3px 0 #dba34d;
+}
+.shell-team .secure {
+  color: #ddceb1;
+  border-color: #383d32;
+}
+.shell-team .secure small {
+  color: #babdaf;
+}
+.shell-team .aside-bottom button {
+  color: #d4d7c8;
+}
+.primary {
+  background: #20241f;
+  color: #fff;
+  border: 1px solid #20241f;
+}
+.primary:hover:not(:disabled) {
+  background: #37372b;
+  border-color: #917141;
+}
+.primary svg {
+  color: #e0b46d;
+}
+.shell .eyebrow {
+  color: #80602e;
+}
+.shell h1 > span {
+  color: #aa7c34;
+}
+.shell .text-button {
+  color: #77501c;
+}
+.shell-team .text-button {
+  color: #77501c;
+}
+.shell-public .guidance {
+  background: #efeadf;
+  border-color: #e1d7c4;
+}
+.shell-public .guidance h2 {
+  color: #38382b;
+}
+.shell-public .guidance .eyebrow {
+  color: #80602e;
+}
+.shell-public .icon-box {
+  color: #886125;
+  background: #f6f0e3;
+  border-color: #e5d9c0;
+}
+.shell-team .stats .card {
+  border-top-color: #e0d2b6;
+}
+.shell-team .stats .card:first-child {
+  border-top-color: #b5883e;
+}
+.shell-team .stats strong {
+  color: #2c3029;
+}
+.shell-team .team-areas label:has(input:checked) {
+  background: #f6eddc;
+  border-color: #b99250;
+  color: #6e4e20;
+}
+.shell-team .overlay {
+  background: #12170f85;
+}
+.shell-team .case-history {
+  border-left-color: #dfd3b9;
+}
+.shell-team .case-history li:before {
+  background: #aa7b30;
+}
+.login-story {
+  background: #151916;
+  color: #f6f3ea;
+}
+.story-symbol {
+  color: #e3b264;
+  border-color: #ae8d514f;
+}
+.shell-login .login-story .eyebrow {
+  color: #e0bd7f;
+}
+.shell-login .login-story h2 {
+  color: #faf7ef;
+}
+.login-story > p {
+  color: #d0d0c4;
+}
+.login-story li {
+  color: #ece9dc;
+}
+.login-story li svg {
+  color: #d7b47a;
+}
+.story-signature {
+  color: #e3bd7a;
+  border-color: #83755255;
+}
+.story-signature span {
+  color: #cacbbd;
+}
+@media (max-width: 700px) {
+  .brand .firm-name {
+    font-size: 23px;
+  }
+  .shell-team .brand .firm-name {
+    font-size: 22px;
+  }
+}
+.shell h1,
+.shell h2,
+.shell h3 {
+  color: var(--ink);
+}
+.shell-login .login-story h2 {
+  color: #faf7ef;
 }

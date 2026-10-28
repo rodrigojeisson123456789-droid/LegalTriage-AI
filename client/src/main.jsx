@@ -242,12 +242,12 @@ function App() {
             change(portal ? (user ? "dashboard" : "login") : "public");
           }}
         >
-          <span className="brand-icon">
-            <Scale size={25} />
-          </span>
-          <span>
-            LegalTriage <b>AI</b>
-            <small>NÚÑEZ SALDAÑA S.A.C.</small>
+          <span className="firm-brand">
+            <span className="firm-name">Núñez Saldaña</span>
+            <small>ABOGADOS SAC</small>
+            <span className="product-name">
+              LegalTriage AI · Atención legal
+            </span>
           </span>
         </a>
         <div className="workspace">ESPACIO DE TRABAJO</div>
