@@ -112,8 +112,7 @@ function passed(id, name, file, detail) {
   console.log(id + " APROBADA: " + name);
 }
 async function login(page, user) {
-  await page.goto(web);
-  await page.getByRole("button", { name: "Acceso del equipo" }).click();
+  await page.goto(web + "/equipo/login");
   await page.getByLabel("Correo electrónico", { exact: true }).fill(user.email);
   await page.getByLabel("Contraseña", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Ingresar", exact: true }).click();
@@ -216,6 +215,12 @@ try {
   const client = await newPage();
   await client.goto(web);
   await client.waitForURL("**/consulta");
+  assert.equal(
+    await client
+      .getByRole("button", { name: "Acceso del equipo", exact: true })
+      .count(),
+    0,
+  );
   assert.equal(
     await client
       .getByRole("button", { name: "Control de plazos", exact: false })

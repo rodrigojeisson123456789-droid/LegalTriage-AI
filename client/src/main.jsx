@@ -294,23 +294,25 @@ function App() {
               Confidencialidad primero<small>Tu información, protegida.</small>
             </span>
           </div>
-          <button
-            disabled={busy}
-            onClick={() => {
-              if (user) {
-                act(async () => {
-                  await api("/logout", { method: "POST" });
-                  replaceSession(null);
-                  change("login");
-                });
-              } else change("login");
-            }}
-          >
-            {user ? <LogOut size={16} /> : <BriefcaseBusiness size={16} />}{" "}
-            {user
-              ? `${user.name} · ${user.role === "gerencia" ? "Gerencia" : user.role === "abogado" ? "Abogado" : "Soporte"} · Salir`
-              : "Acceso del equipo"}
-          </button>
+          {portal && (
+            <button
+              disabled={busy}
+              onClick={() => {
+                if (user) {
+                  act(async () => {
+                    await api("/logout", { method: "POST" });
+                    replaceSession(null);
+                    change("login");
+                  });
+                } else change("login");
+              }}
+            >
+              {user ? <LogOut size={16} /> : <BriefcaseBusiness size={16} />}{" "}
+              {user
+                ? `${user.name} · ${user.role === "gerencia" ? "Gerencia" : user.role === "abogado" ? "Abogado" : "Soporte"} · Salir`
+                : "Acceso del equipo"}
+            </button>
+          )}
         </div>
       </aside>
       <div className="main">
