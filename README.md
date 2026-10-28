@@ -275,3 +275,7 @@ Verificación: `npm test`, `npm run build` y, desde `server/`, `node scripts/ass
 ### Instrumento para comparar tiempos
 
 La [ficha de medición](documentacion/medicion-tiempos/README.md) incluye Excel con registro y resumen por tarea, CSV y guía imprimible. Los tiempos están vacíos: primero debe observarse el procedimiento manual real y acordar tareas equivalentes. Permite un piloto de tareas sobre casos preparados mientras Gemini no responde; no contiene resultados de mejora ni usa tiempos simulados como rendimiento real. Guardar una copia externa antes de registrar observaciones.
+
+### Descripción funcional para la tesis
+
+La [descripción funcional y alcance](documentacion/tesis/DESCRIPCION_FUNCIONAL.md), también disponible en [Word editable](documentacion/tesis/DESCRIPCION_FUNCIONAL.docx), relaciona las funciones implementadas con el flujo de atención, los roles, la arquitectura y las evidencias previas. Distingue la intervención humana de la automatización y deja explícitamente pendiente la observación del procedimiento manual y la comparación de tiempos.
