@@ -1567,3 +1567,119 @@ a:focus-visible {
   color: #8b8e81;
   opacity: 1;
 }
+/* Case controls are actual grouped buttons, separate from the case description. */
+.shell-team .case-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  width: 220px;
+  max-width: 100%;
+}
+.shell-team .case-action {
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  width: 220px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ded6c6;
+  border-radius: 8px;
+  background: #fff;
+  color: #4a5142;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.45;
+  white-space: normal;
+  box-shadow: 0 1px 2px #33271006;
+  transition:
+    background 0.16s,
+    border-color 0.16s,
+    box-shadow 0.16s;
+}
+.shell-team .case-action > span {
+  min-width: 0;
+  overflow-wrap: normal;
+}
+.case-action-icon {
+  color: #8d733f;
+  flex-shrink: 0;
+}
+.case-action-arrow {
+  color: #a08a63;
+  justify-self: end;
+}
+.shell-team .case-action:hover:not(:disabled) {
+  background: #f8f2e7;
+  border-color: #b59a63;
+  color: #5e431c;
+  box-shadow: 0 2px 5px #6d4c1510;
+}
+.shell-team .case-action:focus-visible {
+  outline: 3px solid #a67b36;
+  outline-offset: 3px;
+}
+.shell-team .case-action:active:not(:disabled) {
+  background: #efe4ce;
+  box-shadow: none;
+}
+.shell-team .case-action-emphasis {
+  background: #f5ebd7;
+  border-color: #ccb17c;
+  color: #61451b;
+  font-weight: 650;
+}
+.shell-team .case-action-emphasis:hover:not(:disabled) {
+  background: #efdfbe;
+  border-color: #ac8037;
+}
+.shell-team .case-action:disabled {
+  background: #f3f2ed;
+  border-color: #e2dfd5;
+  color: #8a8e82;
+  opacity: 1;
+  box-shadow: none;
+}
+.case-action:disabled svg {
+  color: inherit;
+}
+.shell-team .description > .case-action {
+  margin-top: 16px;
+}
+.shell-team td:nth-child(5) {
+  min-width: 252px;
+}
+.shell-team td:last-child > .case-action {
+  margin: 10px 0 14px;
+  width: 100%;
+}
+@media (max-width: 700px) {
+  .shell-team .case-action {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shell-team .case-action {
+    transition: none;
+  }
+}
+.shell-team th,
+.shell-team td {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.shell-team td:first-child {
+  min-width: 105px;
+}
+.shell-team td:nth-child(2) {
+  min-width: 150px;
+  overflow-wrap: anywhere;
+}
+.shell-team .description {
+  min-width: 220px;
+}
+.shell-team td:nth-child(5) {
+  min-width: 244px;
+}

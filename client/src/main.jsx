@@ -21,6 +21,11 @@ import {
   Mail,
   LockKeyhole,
   LoaderCircle,
+  History,
+  ClipboardCheck,
+  MessageSquareText,
+  UserRoundPlus,
+  ChevronRight,
 } from "lucide-react";
 import "./style.css";
 import "./design.css";
@@ -56,6 +61,23 @@ const date = (v) =>
     timeStyle: "short",
     timeZone: "America/Lima",
   }).format(new Date(v));
+function CaseAction({ icon: Icon, emphasis = false, children, ...props }) {
+  return (
+    <button
+      type="button"
+      className={`case-action${emphasis ? " case-action-emphasis" : ""}`}
+      {...props}
+    >
+      <Icon className="case-action-icon" size={17} aria-hidden="true" />
+      <span>{children}</span>
+      <ChevronRight
+        className="case-action-arrow"
+        size={14}
+        aria-hidden="true"
+      />
+    </button>
+  );
+}
 function App() {
   const portal = isTeamPath(window.location.pathname);
   const sessionRequests = useRef(new SessionRequests());
@@ -824,12 +846,12 @@ function App() {
                             </td>
                             <td className="description">
                               {c.description}
-                              <button
-                                className="text-button"
+                              <CaseAction
+                                icon={FileText}
                                 onClick={() => setDocumentCase(c.id)}
                               >
-                                Ver documentos y análisis →
-                              </button>
+                                Ver documentos y análisis
+                              </CaseAction>
                             </td>
                             <td>
                               <select
@@ -870,53 +892,60 @@ function App() {
                             </td>
                             <td>
                               <span className="status">{c.status}</span>
-                              <button
-                                className="text-button"
-                                onClick={() => setHistoryCase(c.id)}
+                              <div
+                                className="case-actions"
+                                role="group"
+                                aria-label={`Acciones del caso ${c.id}`}
                               >
-                                Historial del caso →
-                              </button>
-                              {canLegal && (
-                                <button
-                                  className="text-button"
-                                  onClick={() => setEvaluationCase(c.id)}
+                                <CaseAction
+                                  icon={History}
+                                  onClick={() => setHistoryCase(c.id)}
                                 >
-                                  Evaluación y respuesta →
-                                </button>
-                              )}
-                              <button
-                                className="text-button"
-                                onClick={() => setClarificationCase(c.id)}
-                              >
-                                Aclaraciones →
-                              </button>
-                              {c.status === "Nuevo" && (
-                                <button
-                                  disabled={busy}
-                                  className="text-button"
-                                  onClick={() =>
-                                    act(async () => {
-                                      await api("/cases/" + c.id, {
-                                        method: "PATCH",
-                                        body: JSON.stringify({
-                                          status: "En evaluación",
-                                        }),
-                                      });
-                                      await load();
-                                    })
-                                  }
+                                  Historial del caso
+                                </CaseAction>
+                                {canLegal && (
+                                  <CaseAction
+                                    icon={ClipboardCheck}
+                                    emphasis
+                                    onClick={() => setEvaluationCase(c.id)}
+                                  >
+                                    Evaluación y respuesta
+                                  </CaseAction>
+                                )}
+                                <CaseAction
+                                  icon={MessageSquareText}
+                                  onClick={() => setClarificationCase(c.id)}
                                 >
-                                  Mover a evaluación →
-                                </button>
-                              )}
+                                  Aclaraciones
+                                </CaseAction>
+                                {c.status === "Nuevo" && (
+                                  <CaseAction
+                                    disabled={busy}
+                                    icon={ArrowRight}
+                                    onClick={() =>
+                                      act(async () => {
+                                        await api("/cases/" + c.id, {
+                                          method: "PATCH",
+                                          body: JSON.stringify({
+                                            status: "En evaluación",
+                                          }),
+                                        });
+                                        await load();
+                                      })
+                                    }
+                                  >
+                                    Mover a evaluación
+                                  </CaseAction>
+                                )}
+                              </div>
                             </td>
                             <td>
                               {!c.lawyer_id && canAssign && (
                                 <>
                                   <small>Pendiente de asignación</small>
                                   {c.status !== "Atención inicial cerrada" && (
-                                    <button
-                                      className="text-button"
+                                    <CaseAction
+                                      icon={UserRoundPlus}
                                       disabled={busy}
                                       onClick={() =>
                                         act(async () => {
@@ -929,7 +958,7 @@ function App() {
                                       }
                                     >
                                       Asignar automáticamente
-                                    </button>
+                                    </CaseAction>
                                   )}
                                 </>
                               )}

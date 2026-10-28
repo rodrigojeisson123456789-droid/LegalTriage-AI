@@ -21,3 +21,9 @@ Los botones principales tienen acabado dorado sobre texto oscuro, con estados de
 El login incorpora iconos decorativos de correo/contraseña, mostrar/ocultar contraseña, aviso de Bloq Mayús y estado Ingresando. Los errores se muestran dentro de la tarjeta de acceso y se anuncian como alerta; los campos mantienen sus etiquetas y autocompletado. La validación real de credenciales y los roles siguen en el servidor. Se verificaron ingreso incorrecto seguido de ingreso correcto, recarga, navegación atrás y el recorrido funcional con proveedores simulados.
 
 - [Acceso del equipo en móvil](login-movil.png).
+
+## Acciones de cada caso
+
+Los accesos a documentos, historial, evaluación, aclaraciones, cambio de estado y asignación usan botones con icono, borde y foco visibles. Evaluación y respuesta tiene un tono dorado suave para distinguirla. Los textos y el indicador de dirección ocupan columnas separadas, evitando flechas sueltas. El grupo de acciones conserva las restricciones por rol y estado, y los controles deshabilitados siguen diferenciados.
+
+[Vista de los botones del caso](acciones-caso.png). Captura de un caso ficticio durante la prueba automatizada, con Gemini y correo simulados.
