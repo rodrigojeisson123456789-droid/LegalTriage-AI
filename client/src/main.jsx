@@ -92,6 +92,7 @@ function App() {
     [busy, setBusy] = useState(false),
     [receipt, setReceipt] = useState(null),
     [search, setSearch] = useState(""),
+    [statusFilter, setStatusFilter] = useState("all"),
     [modal, setModal] = useState(false),
     [documentCase, setDocumentCase] = useState(null),
     [historyCase, setHistoryCase] = useState(null),
@@ -109,6 +110,7 @@ function App() {
     setDeadlines([]);
     setUsers([]);
     setSearch("");
+    setStatusFilter("all");
     setDeadlineCase(null);
     setDocumentCase(null);
     setHistoryCase(null);
@@ -255,6 +257,13 @@ function App() {
   const canAssign = ["gerencia", "soporte"].includes(user?.role);
   const alerts = deadlines.filter(
     (d) => d.urgency === "Crítico" || d.urgency === "Próximo",
+  );
+  const visibleCases = cases.filter(
+    (c) =>
+      (statusFilter === "all" || c.status === statusFilter) &&
+      `${c.id} ${c.name} ${c.specialty} ${c.description}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
   );
   return (
     <div
@@ -798,20 +807,50 @@ function App() {
                   </div>
                 ))}
               </div>
-              <section className="card table-card">
+              <section className="card table-card case-register">
                 <div className="table-heading">
                   <h2>Consultas entrantes</h2>
                   <label className="search">
                     <Search size={16} />
                     <input
-                      placeholder="Buscar cliente o especialidad"
+                      placeholder="Buscar caso, cliente o especialidad"
+                      aria-label="Buscar consultas"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
                     />
                   </label>
                 </div>
+                <div
+                  className="case-filter-bar"
+                  role="group"
+                  aria-label="Filtrar consultas por estado"
+                >
+                  {[
+                    ["all", "Todas"],
+                    ["Nuevo", "Nuevas"],
+                    ["En evaluación", "En evaluación"],
+                    ["Pendiente de aclaración", "Con aclaración"],
+                  ].map(([value, label]) => (
+                    <button
+                      type="button"
+                      key={value}
+                      className={`case-filter ${statusFilter === value ? "selected" : ""}`}
+                      aria-pressed={statusFilter === value}
+                      onClick={() => setStatusFilter(value)}
+                    >
+                      {label}
+                      <span>
+                        {
+                          cases.filter(
+                            (c) => value === "all" || c.status === value,
+                          ).length
+                        }
+                      </span>
+                    </button>
+                  ))}
+                </div>
                 <div className="table-scroll">
-                  <table>
+                  <table role="table" aria-label="Consultas del equipo">
                     <thead>
                       <tr>
                         {[
@@ -819,178 +858,212 @@ function App() {
                           "Cliente",
                           "Consulta",
                           "Especialidad",
-                          "Estado",
                           "Responsable",
+                          "Acciones",
                         ].map((t) => (
                           <th key={t}>{t}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {cases
-                        .filter((c) =>
-                          (c.name + " " + c.specialty)
-                            .toLowerCase()
-                            .includes(search.toLowerCase()),
-                        )
-                        .map((c) => (
-                          <tr key={c.id}>
-                            <td>
-                              <b>#{c.id}</b>
-                              <small>{date(c.created_at)}</small>
-                            </td>
-                            <td>
-                              <b>{c.name}</b>
-                              <small>{c.email}</small>
-                              <small>{c.phone}</small>
-                            </td>
-                            <td className="description">
-                              {c.description}
+                      {visibleCases.map((c) => (
+                        <tr key={c.id} role="row" className="case-record">
+                          <td role="cell" className="case-record-heading">
+                            <div className="case-reference">
+                              <span className="case-number">
+                                <span>CASO</span>
+                                <b>#{c.id}</b>
+                              </span>
+                              <time dateTime={c.created_at}>
+                                {date(c.created_at)}
+                              </time>
+                            </div>
+                            <span
+                              className={`status case-stage stage-${c.status === "Nuevo" ? "new" : c.status === "En evaluación" ? "review" : c.status === "Atención inicial cerrada" ? "closed" : "follow"}`}
+                            >
+                              {c.status}
+                            </span>
+                          </td>
+                          <td role="cell" className="case-record-client">
+                            <span className="case-field-label">Cliente</span>
+                            <b>{c.name}</b>
+                            <small>{c.email}</small>
+                            <small>{c.phone}</small>
+                          </td>
+                          <td
+                            role="cell"
+                            className="description case-record-description"
+                          >
+                            <span className="case-field-label">Consulta</span>
+                            <p>{c.description}</p>
+                          </td>
+                          <td role="cell" className="case-record-specialty">
+                            <span className="case-field-label">
+                              Especialidad
+                            </span>
+                            <select
+                              aria-label={"Especialidad del caso " + c.id}
+                              value={c.specialty}
+                              disabled={busy}
+                              onChange={(e) => {
+                                const specialty = e.target.value;
+                                act(async () => {
+                                  await api("/cases/" + c.id, {
+                                    method: "PATCH",
+                                    body: JSON.stringify({ specialty }),
+                                  });
+                                  await load();
+                                });
+                              }}
+                            >
+                              {[
+                                "Civil",
+                                "Corporativo",
+                                "Familia",
+                                "Bancario",
+                                "Laboral",
+                                "Penal",
+                                "Indeterminado",
+                              ].map((s) => (
+                                <option key={s}>{s}</option>
+                              ))}
+                            </select>
+                            {c.classification_status === "manual" && (
+                              <small>Especialidad revisada por el equipo</small>
+                            )}
+                            {c.classification_status === "unavailable" && (
+                              <small>Revisión manual pendiente</small>
+                            )}
+                          </td>
+                          <td role="cell" className="case-record-assignee">
+                            <span className="case-field-label">
+                              Responsable
+                            </span>
+                            {!c.lawyer_id && canAssign && (
+                              <>
+                                <small>Pendiente de asignación</small>
+                                {c.status !== "Atención inicial cerrada" && (
+                                  <CaseAction
+                                    icon={UserRoundPlus}
+                                    disabled={busy}
+                                    onClick={() =>
+                                      act(async () => {
+                                        await api(
+                                          `/cases/${c.id}/auto-assign`,
+                                          { method: "POST" },
+                                        );
+                                        await load();
+                                      })
+                                    }
+                                  >
+                                    Asignar automáticamente
+                                  </CaseAction>
+                                )}
+                              </>
+                            )}
+                            <select
+                              aria-label={"Asignar abogado al caso " + c.id}
+                              value={c.lawyer_id || ""}
+                              disabled={busy || !canAssign}
+                              onChange={(e) => {
+                                const lawyer_id = Number(e.target.value);
+                                act(async () => {
+                                  await api("/cases/" + c.id, {
+                                    method: "PATCH",
+                                    body: JSON.stringify({ lawyer_id }),
+                                  });
+                                  await load();
+                                });
+                              }}
+                            >
+                              <option value="" disabled>
+                                Asignar abogado
+                              </option>
+                              {users.map((u) => (
+                                <option key={u.id} value={u.id}>
+                                  {u.name}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td role="cell" className="case-record-actions">
+                            <span className="case-field-label">
+                              Gestionar consulta
+                            </span>
+                            <div
+                              className="case-actions"
+                              role="group"
+                              aria-label={`Acciones del caso ${c.id}`}
+                            >
                               <CaseAction
                                 icon={FileText}
                                 onClick={() => setDocumentCase(c.id)}
                               >
                                 Ver documentos y análisis
                               </CaseAction>
-                            </td>
-                            <td>
-                              <select
-                                aria-label={"Especialidad del caso " + c.id}
-                                value={c.specialty}
-                                disabled={busy}
-                                onChange={(e) => {
-                                  const specialty = e.target.value;
-                                  act(async () => {
-                                    await api("/cases/" + c.id, {
-                                      method: "PATCH",
-                                      body: JSON.stringify({ specialty }),
-                                    });
-                                    await load();
-                                  });
-                                }}
+                              <CaseAction
+                                icon={History}
+                                onClick={() => setHistoryCase(c.id)}
                               >
-                                {[
-                                  "Civil",
-                                  "Corporativo",
-                                  "Familia",
-                                  "Bancario",
-                                  "Laboral",
-                                  "Penal",
-                                  "Indeterminado",
-                                ].map((s) => (
-                                  <option key={s}>{s}</option>
-                                ))}
-                              </select>
-                              {c.classification_status === "manual" && (
-                                <small>
-                                  Especialidad revisada por el equipo
-                                </small>
-                              )}
-                              {c.classification_status === "unavailable" && (
-                                <small>Revisión manual pendiente</small>
-                              )}
-                            </td>
-                            <td>
-                              <span className="status">{c.status}</span>
-                              <div
-                                className="case-actions"
-                                role="group"
-                                aria-label={`Acciones del caso ${c.id}`}
-                              >
+                                Historial del caso
+                              </CaseAction>
+                              {canLegal && (
                                 <CaseAction
-                                  icon={History}
-                                  onClick={() => setHistoryCase(c.id)}
+                                  icon={ClipboardCheck}
+                                  emphasis
+                                  onClick={() => setEvaluationCase(c.id)}
                                 >
-                                  Historial del caso
+                                  Evaluación y respuesta
                                 </CaseAction>
-                                {canLegal && (
-                                  <CaseAction
-                                    icon={ClipboardCheck}
-                                    emphasis
-                                    onClick={() => setEvaluationCase(c.id)}
-                                  >
-                                    Evaluación y respuesta
-                                  </CaseAction>
-                                )}
-                                <CaseAction
-                                  icon={MessageSquareText}
-                                  onClick={() => setClarificationCase(c.id)}
-                                >
-                                  Aclaraciones
-                                </CaseAction>
-                                {c.status === "Nuevo" && (
-                                  <CaseAction
-                                    disabled={busy}
-                                    icon={ArrowRight}
-                                    onClick={() =>
-                                      act(async () => {
-                                        await api("/cases/" + c.id, {
-                                          method: "PATCH",
-                                          body: JSON.stringify({
-                                            status: "En evaluación",
-                                          }),
-                                        });
-                                        await load();
-                                      })
-                                    }
-                                  >
-                                    Mover a evaluación
-                                  </CaseAction>
-                                )}
-                              </div>
-                            </td>
-                            <td>
-                              {!c.lawyer_id && canAssign && (
-                                <>
-                                  <small>Pendiente de asignación</small>
-                                  {c.status !== "Atención inicial cerrada" && (
-                                    <CaseAction
-                                      icon={UserRoundPlus}
-                                      disabled={busy}
-                                      onClick={() =>
-                                        act(async () => {
-                                          await api(
-                                            `/cases/${c.id}/auto-assign`,
-                                            { method: "POST" },
-                                          );
-                                          await load();
-                                        })
-                                      }
-                                    >
-                                      Asignar automáticamente
-                                    </CaseAction>
-                                  )}
-                                </>
                               )}
-                              <select
-                                aria-label={"Asignar abogado al caso " + c.id}
-                                value={c.lawyer_id || ""}
-                                disabled={busy || !canAssign}
-                                onChange={(e) => {
-                                  const lawyer_id = Number(e.target.value);
-                                  act(async () => {
-                                    await api("/cases/" + c.id, {
-                                      method: "PATCH",
-                                      body: JSON.stringify({ lawyer_id }),
-                                    });
-                                    await load();
-                                  });
-                                }}
+                              <CaseAction
+                                icon={MessageSquareText}
+                                onClick={() => setClarificationCase(c.id)}
                               >
-                                <option value="" disabled>
-                                  Asignar abogado
-                                </option>
-                                {users.map((u) => (
-                                  <option key={u.id} value={u.id}>
-                                    {u.name}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                          </tr>
-                        ))}
+                                Aclaraciones
+                              </CaseAction>
+                              {c.status === "Nuevo" && (
+                                <CaseAction
+                                  disabled={busy}
+                                  icon={ArrowRight}
+                                  onClick={() =>
+                                    act(async () => {
+                                      await api("/cases/" + c.id, {
+                                        method: "PATCH",
+                                        body: JSON.stringify({
+                                          status: "En evaluación",
+                                        }),
+                                      });
+                                      await load();
+                                    })
+                                  }
+                                >
+                                  Mover a evaluación
+                                </CaseAction>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
+                  {!!cases.length && !visibleCases.length && (
+                    <div className="empty case-empty">
+                      <Search size={25} aria-hidden="true" />
+                      <h3>No hay consultas con estos filtros</h3>
+                      <p>Prueba con otro nombre, número de caso o estado.</p>
+                      <button
+                        type="button"
+                        className="primary"
+                        onClick={() => {
+                          setSearch("");
+                          setStatusFilter("all");
+                        }}
+                      >
+                        Mostrar todas las consultas
+                      </button>
+                    </div>
+                  )}
                   {!cases.length && (
                     <div className="empty">
                       Aún no hay consultas. Las nuevas solicitudes aparecerán

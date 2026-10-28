@@ -24,6 +24,20 @@ El login incorpora iconos decorativos de correo/contraseña, mostrar/ocultar con
 
 ## Acciones de cada caso
 
-Los accesos a documentos, historial, evaluación, aclaraciones, cambio de estado y asignación usan botones con icono, borde y foco visibles. Evaluación y respuesta tiene un tono dorado suave para distinguirla. Los textos y el indicador de dirección ocupan columnas separadas, evitando flechas sueltas. El grupo de acciones conserva las restricciones por rol y estado, y los controles deshabilitados siguen diferenciados.
+Los accesos a documentos, historial, evaluación, aclaraciones, cambio de estado y asignación usan botones con icono, borde y foco visibles. Evaluación y respuesta se distingue con fondo carbón e icono dorado. Los textos y el indicador de dirección ocupan columnas separadas, evitando flechas sueltas. El grupo de acciones conserva las restricciones por rol y estado, y los controles deshabilitados siguen diferenciados.
 
 [Vista de los botones del caso](acciones-caso.png). Captura de un caso ficticio durante la prueba automatizada, con Gemini y correo simulados.
+
+
+## Panel organizado por fichas
+
+Cada consulta se presenta como una ficha con referencia y estado en la cabecera, datos de cliente y descripción legibles, especialidad y responsable identificados, y una barra de acciones al pie. En móvil los bloques se ordenan en una columna sin desplazamiento horizontal de la ficha.
+
+Los filtros Todas, Nuevas, En evaluación y Con aclaración operan sobre las consultas autorizadas cargadas en el panel. Todas también incluye las que están en seguimiento o cerradas. El buscador admite número de caso, cliente, especialidad o texto de la consulta. Cuando no hay coincidencias muestra una opción para restablecer filtros. Se mantiene el límite existente de 500 registros y la autorización de cada operación en el servidor.
+
+Se comprobó el recorrido funcional, los filtros sin resultados, su restablecimiento y el diseño móvil en navegador con MySQL real y proveedores externos simulados. No hubo cambios de tablas ni migración para el rediseño.
+
+- [Ficha en escritorio](acciones-caso.png).
+- [Ficha en móvil](ficha-caso-movil.png).
+
+Las capturas de casos usan datos ficticios y llevan la identificación de prueba simulada.

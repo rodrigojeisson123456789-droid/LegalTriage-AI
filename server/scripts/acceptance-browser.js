@@ -328,6 +328,33 @@ try {
     "Laboral",
   );
   await screenshot(p, "02-asignacion.png");
+  const stateFilters = p.getByRole("group", {
+    name: "Filtrar consultas por estado",
+  });
+  await stateFilters.getByRole("button", { name: /En evaluación/ }).click();
+  await p
+    .getByRole("heading", { name: "No hay consultas con estos filtros" })
+    .waitFor();
+  await p
+    .getByRole("button", { name: "Mostrar todas las consultas", exact: true })
+    .click();
+  await row.waitFor();
+  await p
+    .getByLabel("Buscar consultas", { exact: true })
+    .fill("caso-inexistente-xyz");
+  await p
+    .getByRole("heading", { name: "No hay consultas con estos filtros" })
+    .waitFor();
+  await p
+    .getByRole("button", { name: "Mostrar todas las consultas", exact: true })
+    .click();
+  await row.waitFor();
+  await p.setViewportSize({ width: 390, height: 844 });
+  assert.ok(
+    await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+  );
+  await screenshot(p, "02-ficha-movil.png");
+  await p.setViewportSize({ width: 1440, height: 1000 });
   passed(
     "UI-02",
     "Clasificación y asignación automática",
