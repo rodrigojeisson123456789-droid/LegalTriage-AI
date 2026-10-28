@@ -12,4 +12,4 @@ El estilo compartido también actualiza panel, perfiles, cuenta, plazos, documen
 
 Código visual: `client/src/design.css`; estructura de las entradas: `client/src/main.jsx`. El archivo de estilos se carga después de la base para mantener los ajustes agrupados.
 
-La cabecera identifica al estudio como Núñez Saldaña · ABOGADOS SAC y conserva LegalTriage AI como nombre del sistema. El símbolo gráfico original queda pendiente de recibir como archivo; no se ha redibujado ni sustituido por una reproducción generada. Las vistas previas muestran la versión tipográfica actual.
+La cabecera identifica al estudio como Núñez Saldaña · ABOGADOS SAC y conserva LegalTriage AI como nombre del sistema. El logo gráfico original se recibió dentro de `icom_-removebg-preview.zip` y se incorporó en `client/public/brand/logo-nunez-saldana.png` sin modificar sus bytes. Se verificó su igualdad con el PNG del ZIP (SHA-256 `a9e2b81df58965358239fa114e0ec9d6b770466f95ae363f1794255c283a62a7`). CSS ajusta únicamente la presentación y oculta márgenes exteriores transparentes; no redibuja, recolorea ni sustituye el símbolo o las letras. Las vistas previas muestran el logo original.

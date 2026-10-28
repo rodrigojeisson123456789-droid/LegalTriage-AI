@@ -243,8 +243,15 @@ function App() {
           }}
         >
           <span className="firm-brand">
-            <span className="firm-name">Núñez Saldaña</span>
-            <small>ABOGADOS SAC</small>
+            <span className="brand-logo-frame">
+              <img
+                className="studio-logo"
+                src="/brand/logo-nunez-saldana.png"
+                alt="Núñez Saldaña · Abogados SAC"
+                width="500"
+                height="500"
+              />
+            </span>
             <span className="product-name">
               LegalTriage AI · Atención legal
             </span>
@@ -590,9 +597,6 @@ function App() {
                 className="login-story"
                 aria-label="Espacio del equipo jurídico"
               >
-                <span className="story-symbol">
-                  <Scale size={42} strokeWidth={1.25} />
-                </span>
                 <div className="eyebrow">ESPACIO DEL EQUIPO JURÍDICO</div>
                 <h2>
                   Cada caso merece
