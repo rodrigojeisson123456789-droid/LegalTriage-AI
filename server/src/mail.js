@@ -27,7 +27,18 @@ export function mailConfig() {
     password = (process.env.SMTP_APP_PASSWORD || "").replace(/\s/g, "");
   const configured =
     z.string().email().safeParse(user).success && password.length > 0;
-  return { mode, origin: url.origin, local, configured, user, password };
+  const autoValue = process.env.MAIL_AUTO_RESPONSE || "true";
+  if (!["true", "false"].includes(autoValue))
+    throw new MailConfigError("MAIL_AUTO_RESPONSE debe ser true o false.");
+  return {
+    mode,
+    origin: url.origin,
+    local,
+    configured,
+    user,
+    password,
+    autoResponse: autoValue === "true",
+  };
 }
 export function gmailTransport(config = mailConfig()) {
   if (!config.configured)

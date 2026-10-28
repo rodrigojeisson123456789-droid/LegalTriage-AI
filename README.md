@@ -129,9 +129,9 @@ Después de revisar los antecedentes, el abogado elige expresamente **seguimient
 
 La aprobación se bloquea si hay aclaraciones vigentes sin responder. El cierre se bloquea si existen plazos futuros, y una atención cerrada no acepta nuevos plazos ni nuevas aclaraciones. El estado **En seguimiento judicial** permite registrar plazos mediante el botón correspondiente con el caso preseleccionado. Cerrar la atención inicial no declara concluido un proceso judicial ni silencia sus plazos; esta versión no incluye una operación posterior de cierre judicial.
 
-Tras aprobar, **Crear enlace de respuesta aprobada** genera un enlace privado de lectura durante 30 días. Se muestra solo una vez y debe copiarse para compartirlo manualmente; no envía correo ni WhatsApp. Muestra únicamente tipo de respuesta, texto aprobado, importe y fecha de aprobación; excluye notas internas, DNI y expediente. No implica contratación, aceptación del cliente ni pago. El token se guarda como hash, se envía por cuerpo al API, puede revocarse y se reemplaza al crear otro enlace. Un enlace localhost solo sirve en la laptop local; requiere despliegue HTTPS para clientes externos.
+Al aprobar con Gmail automático habilitado, se envía la respuesta aprobada y se genera un enlace privado de lectura durante 30 días. **Crear enlace de respuesta aprobada** permite generar otro enlace, revocando el anterior. Se muestra solo una vez y debe copiarse para compartirlo manualmente; no envía correo ni WhatsApp. Muestra únicamente tipo de respuesta, texto aprobado, importe y fecha de aprobación; excluye notas internas, DNI y expediente. No implica contratación, aceptación del cliente ni pago. El token se guarda como hash, se envía por cuerpo al API, puede revocarse y se reemplaza al crear otro enlace. Un enlace localhost solo sirve en la laptop local; requiere despliegue HTTPS para clientes externos.
 
-Para actualizar: detener `npm run dev`, ejecutar `git pull origin main`, `npm ci`, `npm run db:init` y `npm run dev`. La migración amplía estados y crea `evaluations` y `response_links` sin borrar registros. Incluye un único borrador revisable y la aprobación final; no conserva versiones históricas de cada edición del borrador.
+Para actualizar: detener `npm run dev`, ejecutar `git pull origin main`, `npm ci`, `npm run db:init` y `npm run dev`. La migración amplía estados y crea `evaluations` y `response_links` sin borrar registros. Incluye un borrador vigente revisable, su aprobación final y versiones históricas de los guardados, consultables desde el historial.
 
 API privada: `GET/PUT /api/cases/:id/evaluation`, `POST /api/cases/:id/evaluation/approve`, `POST/DELETE /api/cases/:id/evaluation/share`. Acceso público mediante token: `POST /api/responses/access`. El registro de plazos y la aprobación usan el mismo bloqueo transaccional del caso para evitar cierres concurrentes con nuevos plazos.
 
@@ -279,3 +279,29 @@ La [ficha de medición](documentacion/medicion-tiempos/README.md) incluye Excel 
 ### Descripción funcional para la tesis
 
 La [descripción funcional y alcance](documentacion/tesis/DESCRIPCION_FUNCIONAL.md), también disponible en [Word editable](documentacion/tesis/DESCRIPCION_FUNCIONAL.docx), relaciona las funciones implementadas con el flujo de atención, los roles, la arquitectura y las evidencias previas. Distingue la intervención humana de la automatización y deja explícitamente pendiente la observación del procedimiento manual y la comparación de tiempos.
+
+
+### Accesos separados y respuesta automática tras aprobación
+
+- `/consulta`: formulario del cliente; no muestra los menús de gestión ni carga expedientes de la sesión del equipo. La raíz `/` abre este acceso; se mantiene compatibilidad con los enlaces privados por fragmento anteriores.
+- `/equipo/login`: acceso privado de Gerencia, Soporte y Abogado. Al autenticarse abre `/equipo/consultas`; hay rutas internas para cuenta, equipo y plazos. Recarga y navegación atrás conservan la sección y los permisos se siguen verificando en la API.
+- En producción, el servidor web debe servir el frontend para las rutas de la SPA (incluidas `/consulta` y `/equipo/*`) y delegar `/api` a Express. Vite ya ofrece ese fallback en desarrollo.
+
+Con `MAIL_MODE=gmail`, credenciales SMTP configuradas y `MAIL_AUTO_RESPONSE=true` (por defecto), **aprobar la evaluación** activa el envío de su respuesta aprobada, tipo de comunicación, importe si corresponde y enlace privado al correo registrado en el caso. No envía notas internas ni adjuntos. El abogado recibe el aviso en la confirmación de aprobación; guardar borradores o generar análisis de Gemini no envía correos. Gmail y la respuesta aprobada funcionan sin necesitar una nueva llamada a Gemini.
+
+La aprobación, la reserva del intento `pending`, el enlace y sus eventos se guardan en la misma transacción. Después del commit se intenta SMTP y se actualiza el resultado. Dos aprobaciones concurrentes o repetir una aprobación no generan otro envío automático. El resultado se muestra al aprobar y la última notificación registrada puede consultarse al reabrir la evaluación. SMTP aceptado no garantiza entrega ni lectura.
+
+En `MAIL_MODE=preview` no se envía automáticamente ni se crea un intento. Con `MAIL_AUTO_RESPONSE=false` se mantiene el envío manual. Sin configuración SMTP válida se conserva la aprobación y se informa que no se envió. Un rechazo de autenticación queda `failed`; un resultado no confirmable, `uncertain`. Si el proceso cae después del commit, el intento puede quedar `pending`. No hay cola de recuperación ni reintentos automáticos: revisar el registro y el buzón antes de generar un nuevo enlace y reenviar explícitamente. La contraseña/token completo no se guardan en el registro. Crear un enlace manual nuevo revoca también el enlace enviado automáticamente, por lo que la interfaz advierte antes de usar esa operación.
+
+Las aclaraciones mantienen su envío manual por el equipo. WhatsApp queda fuera de esta versión.
+
+Para activar Gmail automático en una instalación existente, conservar las credenciales válidas y verificar en `server/.env`:
+
+```env
+MAIL_MODE=gmail
+MAIL_AUTO_RESPONSE=true
+```
+
+Reiniciar el servidor tras cambiar la configuración. No hace falta una nueva migración de tablas para estas mejoras; se utilizan las tablas existentes de evaluaciones, enlaces, notificaciones e historial. Los enlaces locales siguen necesitando un origen público HTTPS para abrir desde otros equipos.
+
+Verificación adicional: `node scripts/auto-mail-smoke.js` desde `server/` prueba MySQL real y SMTP simulado (preview, desactivado, sin configuración, aceptado, autenticación rechazada e incierto), aprobación concurrente, privacidad y ausencia de duplicados automáticos. Usa 3002, limpia sus datos y no envía correo real. La prueba de navegador `acceptance-browser.js` comprueba accesos, recarga, navegación atrás y aprobación con SMTP simulado; usar `REPORT_DIR` distinto para conservar las evidencias de ejecuciones previas.

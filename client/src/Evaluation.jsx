@@ -282,8 +282,30 @@ export default function Evaluation({
                 Esta vista previa excluye las conclusiones internas.
               </p>
             </section>
+            {approved && data.response_notification && (
+              <p className="notice" role="status">
+                Última notificación de respuesta:{" "}
+                {
+                  {
+                    accepted: "aceptada por Gmail (entrega no confirmada)",
+                    failed: "autenticación rechazada",
+                    uncertain:
+                      "resultado incierto; revisar buzón antes de reenviar",
+                    pending:
+                      "pendiente de confirmar; revisar registro antes de reenviar",
+                  }[data.response_notification.status]
+                }
+                .
+              </p>
+            )}
             {approved ? (
               <>
+                <p className="help">
+                  Crear otro enlace sustituye al anterior, incluido el enviado
+                  automáticamente. Revisa el último envío antes de compartir uno
+                  nuevo.
+                </p>
+
                 <div className="notice">
                   Aprobada por {data.evaluation.approved_by_name} el{" "}
                   {dates(data.evaluation.approved_at)}. La evaluación queda
@@ -381,7 +403,9 @@ export default function Evaluation({
                   <span>
                     He revisado los documentos, las aclaraciones y la respuesta.
                     Confirmo la decisión; al aprobar, la evaluación quedará
-                    bloqueada.
+                    bloqueada. Si el envío automático por Gmail está habilitado,
+                    se enviará automáticamente la respuesta aprobada al correo
+                    del caso.
                   </span>
                 </label>
                 <button
@@ -395,17 +419,20 @@ export default function Evaluation({
                   }
                   onClick={() =>
                     act(async () => {
-                      await api(`/cases/${caseId}/evaluation/approve`, {
-                        method: "POST",
-                        body: JSON.stringify({
-                          expected_revision: data.evaluation.revision,
-                          confirmed,
-                        }),
-                      });
+                      const result = await api(
+                        `/cases/${caseId}/evaluation/approve`,
+                        {
+                          method: "POST",
+                          body: JSON.stringify({
+                            expected_revision: data.evaluation.revision,
+                            confirmed,
+                          }),
+                        },
+                      );
                       await load();
                       await onRefresh();
                       setNotice(
-                        "Evaluación aprobada. La respuesta aún no se ha compartido con el cliente.",
+                        result.notification?.message || "Evaluación aprobada.",
                       );
                     })
                   }

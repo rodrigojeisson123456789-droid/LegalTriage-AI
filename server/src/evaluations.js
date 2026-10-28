@@ -1,3 +1,4 @@
+import { prepareResponse, deliverResponse } from "./auto-response.js";
 import { recordVersion, evaluationPayload } from "./versions.js";
 import { recordEvent } from "./history.js";
 import { guardCaseWrite } from "./access.js";
@@ -50,7 +51,12 @@ evaluations.get("/:id/evaluation", async (req, res) => {
     "SELECT COUNT(*) AS n FROM deadlines WHERE case_id=? AND due_at>UTC_TIMESTAMP()",
     [id],
   );
+  const [mail] = await db.execute(
+    "SELECT status,created_at,updated_at FROM notifications WHERE case_id=? AND kind='response' ORDER BY id DESC LIMIT 1",
+    [id],
+  );
   res.set("Cache-Control", "no-store").json({
+    response_notification: mail[0] || null,
     case_status: cases[0].status,
     evaluation: rows[0] || null,
     pending_clarifications: pending[0].n,
@@ -232,8 +238,10 @@ evaluations.post("/:id/evaluation/approve", async (req, res) => {
       "evaluation",
       evaluationPayload({ ...row, revision: row.revision + 1 }, true),
     );
+    const mailJob = await prepareResponse(connection, id, req.user, row);
     await connection.commit();
-    res.json({ status });
+    const notification = await deliverResponse(mailJob);
+    res.json({ status, notification });
   } catch (error) {
     await connection.rollback();
     throw error;

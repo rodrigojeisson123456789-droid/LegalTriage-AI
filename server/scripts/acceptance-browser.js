@@ -118,6 +118,13 @@ async function login(page, user) {
   await page.getByLabel("Contraseña", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Ingresar", exact: true }).click();
   await page.getByRole("heading", { name: "Panel de consultas." }).waitFor();
+  assert.ok(page.url().endsWith("/equipo/consultas"));
+  await page.reload();
+  await page.getByRole("heading", { name: "Panel de consultas." }).waitFor();
+  await page.getByRole("button", { name: "Mi cuenta", exact: true }).click();
+  assert.ok(page.url().endsWith("/equipo/cuenta"));
+  await page.goBack();
+  await page.getByRole("heading", { name: "Panel de consultas." }).waitFor();
 }
 async function newPage(viewport = { width: 1440, height: 1000 }) {
   const context = await browser.newContext({ viewport });
@@ -199,6 +206,13 @@ try {
   });
   const client = await newPage();
   await client.goto(web);
+  await client.waitForURL("**/consulta");
+  assert.equal(
+    await client
+      .getByRole("button", { name: "Control de plazos", exact: false })
+      .count(),
+    0,
+  );
   await client
     .getByLabel("Nombre completo", { exact: true })
     .fill("Cliente Ficticio de Prueba");
@@ -458,6 +472,12 @@ try {
     .click();
   await p
     .getByRole("button", { name: "Crear enlace de respuesta aprobada" })
+    .waitFor();
+  await p
+    .getByText(
+      "Última notificación de respuesta: aceptada por Gmail (entrega no confirmada).",
+      { exact: true },
+    )
     .waitFor();
   assert.equal(
     await p.getByLabel("Conclusiones internas del abogado").isDisabled(),

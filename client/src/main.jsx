@@ -1,3 +1,4 @@
+import { isTeamPath, viewPath, teamView } from "./portal-route.js";
 import React, { useState, useEffect, useRef } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -49,9 +50,10 @@ const date = (v) =>
     timeZone: "America/Lima",
   }).format(new Date(v));
 function App() {
+  const portal = isTeamPath(window.location.pathname);
   const sessionRequests = useRef(new SessionRequests());
   const identity = useRef(null);
-  const [view, setView] = useState("public"),
+  const [view, setView] = useState(portal ? "login" : "public"),
     [user, setUser] = useState(null),
     [cases, setCases] = useState([]),
     [deadlines, setDeadlines] = useState([]),
@@ -89,6 +91,7 @@ function App() {
   function expiredSession() {
     replaceSession(null);
     setView("login");
+    window.history.replaceState({}, "", viewPath("login"));
     setError("Tu sesión terminó. Vuelve a iniciar sesión.");
   }
   async function load() {
@@ -133,15 +136,22 @@ function App() {
     }
   }
   useEffect(() => {
+    if (!portal) return;
     const request = sessionRequests.current.start();
     api("/me", { signal: request.signal })
       .then((me) => {
         if (request.isCurrent()) {
           identity.current = me;
           setUser(me);
+          const next = teamView(window.location.pathname);
+          setView(next);
+          window.history.replaceState({}, "", viewPath(next));
         }
       })
-      .catch(() => {})
+      .catch((e) => {
+        if (request.isCurrent() && e.status === 401)
+          window.history.replaceState({}, "", viewPath("login"));
+      })
       .finally(() => request.finish());
     return () => request.cancel();
   }, []);
@@ -178,10 +188,29 @@ function App() {
     }
   }
   function change(v) {
+    if ((v === "public" && portal) || (v === "login" && !portal)) {
+      window.location.assign(viewPath(v));
+      return;
+    }
+    window.history.pushState({}, "", viewPath(v));
     setError("");
     setSessionNotice("");
     setView(v);
   }
+  useEffect(() => {
+    const update = () => {
+      setError("");
+      setView(
+        portal
+          ? identity.current
+            ? teamView(window.location.pathname)
+            : "login"
+          : "public",
+      );
+    };
+    window.addEventListener("popstate", update);
+    return () => window.removeEventListener("popstate", update);
+  }, [portal]);
   const input = (label, name, type = "text", extra = {}) => (
     <label>
       {label}
@@ -221,35 +250,39 @@ function App() {
           >
             <Plus size={18} /> Nueva consulta
           </button>
-          <button
-            className={view === "dashboard" ? "active" : ""}
-            onClick={() => change(user ? "dashboard" : "login")}
-          >
-            <LayoutDashboard size={18} /> Consultas{" "}
-            <span>{user ? cases.length : "↗"}</span>
-          </button>
-          <button
-            className={view === "deadlines" ? "active" : ""}
-            onClick={() => change(user ? "deadlines" : "login")}
-          >
-            <Clock3 size={18} /> Control de plazos{" "}
-            {user && alerts.length > 0 && <span>{alerts.length}</span>}
-          </button>
-          {canManage && (
-            <button
-              className={view === "team" ? "active" : ""}
-              onClick={() => change(user ? "team" : "login")}
-            >
-              <Users size={18} /> Equipo
-            </button>
-          )}
-          {user && (
-            <button
-              className={view === "account" ? "active" : ""}
-              onClick={() => change("account")}
-            >
-              <KeyRound size={18} /> Mi cuenta
-            </button>
+          {portal && (
+            <>
+              <button
+                className={view === "dashboard" ? "active" : ""}
+                onClick={() => change(user ? "dashboard" : "login")}
+              >
+                <LayoutDashboard size={18} /> Consultas{" "}
+                <span>{user ? cases.length : "↗"}</span>
+              </button>
+              <button
+                className={view === "deadlines" ? "active" : ""}
+                onClick={() => change(user ? "deadlines" : "login")}
+              >
+                <Clock3 size={18} /> Control de plazos{" "}
+                {user && alerts.length > 0 && <span>{alerts.length}</span>}
+              </button>
+              {canManage && (
+                <button
+                  className={view === "team" ? "active" : ""}
+                  onClick={() => change(user ? "team" : "login")}
+                >
+                  <Users size={18} /> Equipo
+                </button>
+              )}
+              {user && (
+                <button
+                  className={view === "account" ? "active" : ""}
+                  onClick={() => change("account")}
+                >
+                  <KeyRound size={18} /> Mi cuenta
+                </button>
+              )}
+            </>
           )}
         </nav>
         <div className="aside-bottom">
@@ -263,10 +296,10 @@ function App() {
             disabled={busy}
             onClick={() => {
               if (user) {
-                replaceSession(null);
-                change("public");
                 act(async () => {
                   await api("/logout", { method: "POST" });
+                  replaceSession(null);
+                  change("login");
                 });
               } else change("login");
             }}
@@ -576,7 +609,7 @@ function App() {
               user={user}
               onPasswordChanged={() => {
                 replaceSession(null);
-                setView("login");
+                change("login");
                 setSessionNotice(
                   "Contraseña actualizada. Inicia sesión con tu nueva clave.",
                 );
@@ -1026,6 +1059,10 @@ function App() {
   );
 }
 function Root() {
+  useEffect(() => {
+    if (window.location.pathname === "/" && !window.location.hash)
+      window.history.replaceState({}, "", "/consulta");
+  }, []);
   const [hash, setHash] = useState(window.location.hash);
   useEffect(() => {
     const update = () => setHash(window.location.hash);
