@@ -18,6 +18,9 @@ import {
   Eye,
   EyeOff,
   FileText,
+  Mail,
+  LockKeyhole,
+  LoaderCircle,
 } from "lucide-react";
 import "./style.css";
 import "./design.css";
@@ -74,7 +77,8 @@ function App() {
     [evaluationCase, setEvaluationCase] = useState(null),
     [deadlineCase, setDeadlineCase] = useState(null),
     [attachmentName, setAttachmentName] = useState(""),
-    [showPassword, setShowPassword] = useState(false);
+    [showPassword, setShowPassword] = useState(false),
+    [capsLock, setCapsLock] = useState(false);
   function replaceSession(nextUser) {
     sessionRequests.current.invalidate();
     identity.current = nextUser;
@@ -93,6 +97,7 @@ function App() {
     setSessionNotice("");
     setBusy(false);
     setShowPassword(false);
+    setCapsLock(false);
   }
   function expiredSession() {
     replaceSession(null);
@@ -351,7 +356,7 @@ function App() {
               {sessionNotice}
             </div>
           )}
-          {error && (
+          {error && view !== "login" && (
             <div className="error" role="alert">
               {error}
             </div>
@@ -620,10 +625,24 @@ function App() {
                 </div>
               </section>
               <section className="card login">
+                <span className="login-emblem" aria-hidden="true">
+                  <LockKeyhole size={24} />
+                </span>
                 <div className="eyebrow">ACCESO DEL EQUIPO</div>
                 <h1>Bienvenido de nuevo.</h1>
                 <p>Ingresa con tu cuenta del estudio jurídico.</p>
+                {error && (
+                  <div
+                    className="error login-error"
+                    role="alert"
+                    id="login-error"
+                  >
+                    {error}
+                  </div>
+                )}
                 <form
+                  aria-busy={busy}
+                  aria-describedby={error ? "login-error" : undefined}
                   onSubmit={(e) => {
                     e.preventDefault();
                     const data = Object.fromEntries(
@@ -641,11 +660,25 @@ function App() {
                     });
                   }}
                 >
-                  {input("Correo electrónico", "email", "email", {
-                    autoComplete: "username",
-                    placeholder: "tu.correo@estudio.com",
-                  })}
+                  <label>
+                    Correo electrónico
+                    <span className="login-control">
+                      <Mail size={18} aria-hidden="true" />
+                      <input
+                        name="email"
+                        type="email"
+                        required
+                        autoComplete="username"
+                        placeholder="tu.correo@estudio.com"
+                      />
+                    </span>
+                  </label>
                   <div className="login-password">
+                    <LockKeyhole
+                      className="password-icon"
+                      size={18}
+                      aria-hidden="true"
+                    />
                     {input(
                       "Contraseña",
                       "password",
@@ -653,6 +686,11 @@ function App() {
                       {
                         autoComplete: "current-password",
                         placeholder: "Ingresa tu contraseña",
+                        onKeyDown: (e) =>
+                          setCapsLock(e.getModifierState("CapsLock")),
+                        onKeyUp: (e) =>
+                          setCapsLock(e.getModifierState("CapsLock")),
+                        onBlur: () => setCapsLock(false),
                       },
                     )}
                     <button
@@ -669,8 +707,21 @@ function App() {
                       {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
                     </button>
                   </div>
-                  <button className="primary" disabled={busy}>
-                    {busy ? "Ingresando…" : "Ingresar"} <ArrowRight size={17} />
+                  {capsLock && (
+                    <p className="caps-hint" role="status">
+                      Bloq Mayús está activado.
+                    </p>
+                  )}
+                  <button className="primary login-submit" disabled={busy}>
+                    {busy ? (
+                      <LoaderCircle
+                        size={18}
+                        className="button-spinner"
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                    {busy ? "Ingresando…" : "Ingresar"}
+                    {!busy && <ArrowRight size={18} aria-hidden="true" />}
                   </button>
                 </form>
                 <p className="login-note">

@@ -119,6 +119,18 @@ async function login(page, user) {
   await page.getByLabel("Correo electrónico", { exact: true }).waitFor();
   await screenshot(page, "00-login-" + user.role + ".png");
   await page.getByLabel("Correo electrónico", { exact: true }).fill(user.email);
+  if (user.role === "abogado") {
+    await page
+      .getByLabel("Contraseña", { exact: true })
+      .fill("clave-de-prueba-incorrecta");
+    await page.getByRole("button", { name: "Ingresar", exact: true }).click();
+    await page
+      .locator(".login")
+      .getByRole("alert")
+      .filter({ hasText: "Credenciales incorrectas" })
+      .waitFor();
+    assert.ok(page.url().endsWith("/equipo/login"));
+  }
   await page.getByLabel("Contraseña", { exact: true }).fill(password);
   await page
     .getByRole("button", { name: "Mostrar contraseña", exact: true })

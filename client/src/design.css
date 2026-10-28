@@ -1200,3 +1200,370 @@ a:focus-visible {
 .shell-login .login-story h2 {
   color: #faf7ef;
 }
+/* Controls: clear action hierarchy and tactile, restrained feedback. */
+.primary {
+  background: linear-gradient(180deg, #e6bb70, #d5a251);
+  border: 1px solid #be8c40;
+  border-radius: 10px;
+  color: #20231e;
+  font-weight: 700;
+  box-shadow:
+    0 2px 0 #9d732e,
+    0 5px 12px #8d642519;
+  gap: 12px;
+  transition:
+    transform 0.16s,
+    box-shadow 0.16s,
+    background 0.16s,
+    border-color 0.16s;
+}
+.primary svg {
+  color: #393423;
+  flex-shrink: 0;
+  transition: transform 0.16s;
+}
+.primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #edc886, #dfb165);
+  color: #171a15;
+  border-color: #a6772e;
+  transform: translateY(-1px);
+  box-shadow:
+    0 3px 0 #9d732e,
+    0 7px 16px #8d642526;
+}
+.primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow:
+    0 1px 0 #9d732e,
+    0 2px 5px #8d64251a;
+}
+.primary:focus-visible {
+  outline: 3px solid #865d20;
+  outline-offset: 4px;
+}
+.primary:disabled {
+  background: #e4e1d8;
+  color: #77796d;
+  border-color: #d6d1c4;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+}
+.primary:disabled svg {
+  color: inherit;
+}
+.form-footer > button:not(.primary),
+.modal form button:not(.primary),
+.evaluation-form .form-footer > button:not(.primary) {
+  min-height: 44px;
+  padding: 11px 16px;
+  border: 1px solid #cbc5b7;
+  background: #fff;
+  border-radius: 9px;
+  font-weight: 550;
+  font-size: 13px;
+  color: #4d5146;
+}
+.form-footer > button:not(.primary):hover:not(:disabled),
+.modal form button:not(.primary):hover:not(:disabled) {
+  background: #f2eee4;
+  border-color: #b7a786;
+}
+.shell-team .text-button {
+  display: block;
+  width: fit-content;
+  min-height: 36px;
+  padding: 7px 9px;
+  margin-left: -9px;
+  border-radius: 7px;
+  transition:
+    background 0.16s,
+    color 0.16s;
+}
+.shell-team .text-button:hover:not(:disabled) {
+  background: #f4ecdd;
+  text-decoration: none;
+  color: #604114;
+}
+.shell-team .title-row > button {
+  border: 1px solid #e3ddcf;
+  background: #f9f7f1;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  transition:
+    background 0.16s,
+    border-color 0.16s;
+}
+.shell-team .title-row > button:hover:not(:disabled) {
+  background: #ede4d2;
+  border-color: #c5ab7e;
+}
+.shell-team nav button {
+  transition:
+    background 0.16s,
+    box-shadow 0.16s,
+    color 0.16s;
+}
+.shell-team nav button:focus-visible {
+  outline-color: #e5ba6d;
+}
+.shell input:hover:not(:focus):not(:disabled),
+.shell textarea:hover:not(:focus):not(:disabled),
+.shell select:hover:not(:focus):not(:disabled) {
+  border-color: #b2a78f;
+}
+.shell input:focus,
+.shell textarea:focus,
+.shell select:focus {
+  border-color: #9b7232;
+  outline: 3px solid #c69b4a29;
+  outline-offset: 0;
+  box-shadow: 0 0 0 1px #9b723220;
+}
+/* Sign-in: compact brand introduction and a distinct authentication card. */
+.shell-login main {
+  padding-top: 38px;
+}
+.login-layout {
+  border-color: #d9d2c3;
+  box-shadow: 0 18px 52px #1e291312;
+  border-radius: 22px;
+  margin-top: 10px;
+}
+.login-story {
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid #826a3740;
+}
+.login-story::before {
+  content: "";
+  position: absolute;
+  right: -160px;
+  top: -130px;
+  width: 390px;
+  height: 390px;
+  border: 1px solid #b8934d24;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.login-story::after {
+  content: "";
+  position: absolute;
+  right: -130px;
+  top: -100px;
+  width: 330px;
+  height: 330px;
+  border: 1px solid #b8934d18;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.story-symbol {
+  border-color: #9b773745;
+  background: #cda55a0c;
+  border-radius: 16px;
+}
+.shell-login .login {
+  padding: 40px;
+}
+.login-emblem {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  background: #f5eddd;
+  border: 1px solid #e2d2b4;
+  border-radius: 14px;
+  color: #8b6429;
+  margin-bottom: 23px;
+  box-shadow: 0 3px 8px #8e632009;
+}
+.shell-login .login .eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.7px;
+  margin-bottom: 12px;
+  color: #8a6229;
+}
+.shell-login .login h1 {
+  font-size: 31px;
+  letter-spacing: -1.1px;
+  margin-bottom: 12px;
+}
+.shell-login .login form {
+  padding-top: 22px;
+}
+.shell-login .login label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3c4438;
+  gap: 10px;
+}
+.login-control {
+  position: relative;
+  display: block;
+}
+.login-control > svg {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #8e8d7d;
+  pointer-events: none;
+}
+.shell-login .login input {
+  min-height: 51px;
+  background: #fcfcf9;
+  border-color: #d6d5c9;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: inset 0 1px 2px #38432103;
+}
+.shell-login .login .login-control input {
+  padding-left: 46px;
+}
+.shell-login .login .login-password input {
+  padding-left: 46px;
+  padding-right: 48px;
+}
+.password-icon {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  color: #8e8d7d;
+  pointer-events: none;
+}
+.login-control:focus-within > svg,
+.login-password:focus-within > .password-icon {
+  color: #8a6229;
+}
+.password-visibility {
+  bottom: 5px;
+  right: 5px;
+  width: 40px;
+  height: 40px;
+  color: #716e5c;
+  border-radius: 8px;
+}
+.password-visibility:hover {
+  color: #6b4c1f;
+  background: #f0e6d3;
+}
+.shell-login .login .login-submit {
+  min-height: 51px;
+  font-size: 14px;
+  letter-spacing: 0.15px;
+  justify-content: center;
+  margin-top: 7px;
+}
+.login-submit:not(:disabled):hover > svg:last-child {
+  transform: translateX(3px);
+}
+.shell-login .login .login-note {
+  margin-top: 26px;
+  font-size: 11px;
+  line-height: 1.9;
+  color: #6e7466;
+  border-top-color: #e4dfd1;
+}
+.shell-login .login .login-note svg {
+  color: #977139;
+}
+.shell-login .login .login-error {
+  margin: 22px 0 0;
+  font-size: 13px;
+  border-left: 3px solid #b95840;
+  padding: 13px 16px;
+  line-height: 1.65;
+}
+.shell-login .login .caps-hint {
+  font-size: 12px;
+  color: #8b5c17;
+  background: #fcf4e0;
+  border: 1px solid #f0dfb3;
+  border-radius: 6px;
+  margin: 0 0 16px;
+  padding: 9px 12px;
+}
+.button-spinner {
+  animation: button-turn 0.8s linear infinite;
+}
+@keyframes button-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 700px) {
+  .shell-login main {
+    padding-top: 24px;
+  }
+  .login-layout {
+    border-radius: 16px;
+  }
+  .login-story {
+    padding: 26px;
+  }
+  .shell-login .login-story h2 {
+    font-size: 26px;
+  }
+  .shell-login .login {
+    padding: 28px 24px;
+  }
+  .shell-login .login h1 {
+    font-size: 27px;
+  }
+  .shell-login .login input {
+    font-size: 16px;
+    min-height: 52px;
+  }
+  .login-emblem {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 20px;
+    border-radius: 12px;
+  }
+  .shell-team .text-button {
+    min-height: 40px;
+  }
+  .form-footer > button:not(.primary) {
+    min-height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .primary,
+  .primary svg,
+  .shell-team .text-button,
+  .shell-team nav button {
+    transition: none;
+  }
+  .primary:hover:not(:disabled),
+  .primary:active:not(:disabled) {
+    transform: none;
+  }
+  .button-spinner {
+    animation: none;
+  }
+  .login-submit:not(:disabled):hover > svg:last-child {
+    transform: none;
+  }
+}
+.shell-team .team-role button {
+  padding: 9px 13px;
+  border: 1px solid #c9bea7;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6f5123;
+  text-decoration: none;
+  min-height: 40px;
+}
+.shell-team .team-role button:hover:not(:disabled) {
+  background: #f6efdf;
+  border-color: #a88c57;
+}
+.shell-team .team-role button:disabled {
+  background: #f5f4ef;
+  border-color: #e0ddd2;
+  color: #8b8e81;
+  opacity: 1;
+}

@@ -13,3 +13,11 @@ El estilo compartido también actualiza panel, perfiles, cuenta, plazos, documen
 Código visual: `client/src/design.css`; estructura de las entradas: `client/src/main.jsx`. El archivo de estilos se carga después de la base para mantener los ajustes agrupados.
 
 La cabecera identifica al estudio como Núñez Saldaña · ABOGADOS SAC y conserva LegalTriage AI como nombre del sistema. Por elección del autor se utiliza la cabecera tipográfica, sin la imagen del logo adjunto. Se mantienen la paleta negro carbón y dorado y las vistas previas de esta presentación.
+
+## Botones y formulario de acceso
+
+Los botones principales tienen acabado dorado sobre texto oscuro, con estados de foco, hover, clic y deshabilitado diferenciados. Las acciones secundarias usan contorno; los enlaces de acción tienen una superficie de interacción mayor. Las transiciones y el indicador de carga respetan la preferencia de movimiento reducido.
+
+El login incorpora iconos decorativos de correo/contraseña, mostrar/ocultar contraseña, aviso de Bloq Mayús y estado Ingresando. Los errores se muestran dentro de la tarjeta de acceso y se anuncian como alerta; los campos mantienen sus etiquetas y autocompletado. La validación real de credenciales y los roles siguen en el servidor. Se verificaron ingreso incorrecto seguido de ingreso correcto, recarga, navegación atrás y el recorrido funcional con proveedores simulados.
+
+- [Acceso del equipo en móvil](login-movil.png).
