@@ -255,3 +255,7 @@ Pruebas: `npm test` valida el esquema y restricciones de las versiones. Desde `s
 ### Evidencia de pruebas funcionales
 
 El [informe del 25 de octubre de 2026](documentacion/pruebas/2026-10-25/README.md) contiene resultados, matriz CSV, PDF, capturas y registros de una ejecución con datos ficticios: 22 pruebas unitarias, nueve grupos de integración y once comprobaciones en navegador. MySQL fue real; Gemini y SMTP se simularon. No demuestra calidad jurídica del modelo, entrega real de Gmail ni ahorro de tiempo frente al proceso manual. El recorrido visual puede reproducirse con `server/scripts/acceptance-browser.js`, siguiendo las condiciones y dependencias indicadas en el informe.
+
+### Detalle de errores en la prueba de texto de Gemini
+
+Si AI Studio responde pero la API falla, `npm run gemini:text` muestra HTTP, duración y, ante un error, **Detalle recibido (filtrado)**: código, estado y mensaje del proveedor. Solo lo hace en esta prueba sintética, sin documentos ni datos de clientes. Oculta la clave configurada, URLs y patrones de credenciales, limita el mensaje a 500 caracteres y no imprime metadatos completos. Una respuesta 503 sin error JSON estructurado se identifica sin mostrar HTML. Este diagnóstico no altera las respuestas del panel ni corrige por sí mismo la disponibilidad externa. AI Studio y una clave de API pueden tener cuotas, permisos o rutas de servicio diferentes; que uno funcione no valida el otro.
