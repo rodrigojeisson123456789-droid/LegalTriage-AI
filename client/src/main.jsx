@@ -15,8 +15,12 @@ import {
   CheckCircle2,
   ArrowRight,
   BriefcaseBusiness,
+  Eye,
+  EyeOff,
+  FileText,
 } from "lucide-react";
 import "./style.css";
+import "./design.css";
 import { SessionRequests } from "./session.js";
 import { ClarificationManager, ClarificationReply } from "./Clarifications.jsx";
 import Evaluation, { ClientResponse } from "./Evaluation.jsx";
@@ -69,7 +73,8 @@ function App() {
     [clarificationCase, setClarificationCase] = useState(null),
     [evaluationCase, setEvaluationCase] = useState(null),
     [deadlineCase, setDeadlineCase] = useState(null),
-    [attachmentName, setAttachmentName] = useState("");
+    [attachmentName, setAttachmentName] = useState(""),
+    [showPassword, setShowPassword] = useState(false);
   function replaceSession(nextUser) {
     sessionRequests.current.invalidate();
     identity.current = nextUser;
@@ -87,6 +92,7 @@ function App() {
     setError("");
     setSessionNotice("");
     setBusy(false);
+    setShowPassword(false);
   }
   function expiredSession() {
     replaceSession(null);
@@ -224,7 +230,9 @@ function App() {
     (d) => d.urgency === "Crítico" || d.urgency === "Próximo",
   );
   return (
-    <div className="shell">
+    <div
+      className={`shell ${!portal ? "shell-public" : view === "login" ? "shell-login" : "shell-team"}`}
+    >
       <aside>
         <a
           className="brand"
@@ -372,7 +380,7 @@ function App() {
                       <h2>Nueva consulta legal</h2>
                       <p>Completa tus datos para comenzar.</p>
                     </div>
-                    <span className="step">01 / 02</span>
+                    <span className="step">Datos y consulta</span>
                   </div>
                   {receipt ? (
                     <div className="success">
@@ -577,35 +585,101 @@ function App() {
             </>
           )}
           {view === "login" && (
-            <section className="card login">
-              <div className="eyebrow">ACCESO DEL EQUIPO</div>
-              <h1>Bienvenido de nuevo.</h1>
-              <p>Ingresa con tu cuenta del estudio jurídico.</p>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const data = Object.fromEntries(
-                    new FormData(e.currentTarget),
-                  );
-                  replaceSession(null);
-                  act(async () => {
-                    replaceSession(
-                      await api("/login", {
-                        method: "POST",
-                        body: JSON.stringify(data),
-                      }),
-                    );
-                    change("dashboard");
-                  });
-                }}
+            <div className="login-layout">
+              <section
+                className="login-story"
+                aria-label="Espacio del equipo jurídico"
               >
-                {input("Correo electrónico", "email", "email")}
-                {input("Contraseña", "password", "password")}
-                <button className="primary" disabled={busy}>
-                  Ingresar <ArrowRight size={17} />
-                </button>
-              </form>
-            </section>
+                <span className="story-symbol">
+                  <Scale size={42} strokeWidth={1.25} />
+                </span>
+                <div className="eyebrow">ESPACIO DEL EQUIPO JURÍDICO</div>
+                <h2>
+                  Cada caso merece
+                  <br />
+                  toda tu atención.
+                </h2>
+                <p>
+                  Un espacio para organizar tus consultas, revisar documentos y
+                  acompañar cada etapa de la atención.
+                </p>
+                <ul>
+                  <li>
+                    <FileText size={19} /> Documentos y versiones a mano
+                  </li>
+                  <li>
+                    <Users size={19} /> Un responsable para cada caso
+                  </li>
+                  <li>
+                    <Clock3 size={19} /> Seguimiento de fechas y plazos
+                  </li>
+                </ul>
+                <div className="story-signature">
+                  NÚÑEZ SALDAÑA S.A.C.
+                  <span>Gestión legal con criterio humano.</span>
+                </div>
+              </section>
+              <section className="card login">
+                <div className="eyebrow">ACCESO DEL EQUIPO</div>
+                <h1>Bienvenido de nuevo.</h1>
+                <p>Ingresa con tu cuenta del estudio jurídico.</p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const data = Object.fromEntries(
+                      new FormData(e.currentTarget),
+                    );
+                    replaceSession(null);
+                    act(async () => {
+                      replaceSession(
+                        await api("/login", {
+                          method: "POST",
+                          body: JSON.stringify(data),
+                        }),
+                      );
+                      change("dashboard");
+                    });
+                  }}
+                >
+                  {input("Correo electrónico", "email", "email", {
+                    autoComplete: "username",
+                    placeholder: "tu.correo@estudio.com",
+                  })}
+                  <div className="login-password">
+                    {input(
+                      "Contraseña",
+                      "password",
+                      showPassword ? "text" : "password",
+                      {
+                        autoComplete: "current-password",
+                        placeholder: "Ingresa tu contraseña",
+                      },
+                    )}
+                    <button
+                      type="button"
+                      className="password-visibility"
+                      aria-label={
+                        showPassword
+                          ? "Ocultar contraseña"
+                          : "Mostrar contraseña"
+                      }
+                      aria-pressed={showPassword}
+                      onClick={() => setShowPassword((v) => !v)}
+                    >
+                      {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                    </button>
+                  </div>
+                  <button className="primary" disabled={busy}>
+                    {busy ? "Ingresando…" : "Ingresar"} <ArrowRight size={17} />
+                  </button>
+                </form>
+                <p className="login-note">
+                  <ShieldCheck size={16} />
+                  Acceso exclusivo para cuentas del estudio. Si necesitas ayuda
+                  con tu cuenta, contacta a Gerencia.
+                </p>
+              </section>
+            </div>
           )}
           {user && view === "account" && (
             <Account

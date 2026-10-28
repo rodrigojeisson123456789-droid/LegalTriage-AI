@@ -97,7 +97,10 @@ async function screenshot(page, file) {
   await page.screenshot({
     path: path.join(evidence, file),
     fullPage: true,
-    mask: [page.locator("input[readonly]")],
+    mask: [
+      page.locator("input[readonly]"),
+      page.locator('input[name="password"]'),
+    ],
     maskColor: "#c4d1ca",
   });
 }
@@ -113,8 +116,20 @@ function passed(id, name, file, detail) {
 }
 async function login(page, user) {
   await page.goto(web + "/equipo/login");
+  await page.getByLabel("Correo electrónico", { exact: true }).waitFor();
+  await screenshot(page, "00-login-" + user.role + ".png");
   await page.getByLabel("Correo electrónico", { exact: true }).fill(user.email);
   await page.getByLabel("Contraseña", { exact: true }).fill(password);
+  await page
+    .getByRole("button", { name: "Mostrar contraseña", exact: true })
+    .click();
+  assert.equal(
+    await page.getByLabel("Contraseña", { exact: true }).getAttribute("type"),
+    "text",
+  );
+  await page
+    .getByRole("button", { name: "Ocultar contraseña", exact: true })
+    .click();
   await page.getByRole("button", { name: "Ingresar", exact: true }).click();
   await page.getByRole("heading", { name: "Panel de consultas." }).waitFor();
   assert.ok(page.url().endsWith("/equipo/consultas"));
@@ -215,6 +230,16 @@ try {
   const client = await newPage();
   await client.goto(web);
   await client.waitForURL("**/consulta");
+  await client.getByLabel("Nombre completo", { exact: true }).waitFor();
+  await screenshot(client, "00-formulario.png");
+  await client.setViewportSize({ width: 390, height: 844 });
+  assert.ok(
+    await client.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
+  await screenshot(client, "00-formulario-movil.png");
+  await client.setViewportSize({ width: 1440, height: 1000 });
   assert.equal(
     await client
       .getByRole("button", { name: "Acceso del equipo", exact: true })
@@ -572,6 +597,46 @@ try {
     "10-permisos-soporte.png",
     "Soporte no ve evaluaciones ni sus versiones; otro abogado no ve el caso.",
   );
+  // Visual checks for the remaining workspace screens and a narrow viewport.
+  const admin = await newPage();
+  await login(admin, manager);
+  await admin.getByRole("button", { name: "Equipo", exact: true }).click();
+  await admin.locator("form.team-member").first().waitFor();
+  await screenshot(admin, "11-equipo.png");
+  await admin.setViewportSize({ width: 320, height: 844 });
+  assert.ok(
+    await admin.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
+  await screenshot(admin, "11-equipo-movil.png");
+  await admin.getByRole("button", { name: "Mi cuenta", exact: true }).click();
+  await admin.getByLabel("Contraseña actual", { exact: true }).waitFor();
+  assert.ok(
+    await admin.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
+  await screenshot(admin, "12-cuenta-movil.png");
+  await admin
+    .getByRole("button", { name: "Control de plazos", exact: false })
+    .click();
+  await admin.getByRole("heading", { name: "Control de plazos." }).waitFor();
+  assert.ok(
+    await admin.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
+  await screenshot(admin, "13-plazos-movil.png");
+  const mobileLogin = await newPage({ width: 320, height: 844 });
+  await mobileLogin.goto(web + "/equipo/login");
+  await mobileLogin.getByLabel("Correo electrónico", { exact: true }).waitFor();
+  assert.ok(
+    await mobileLogin.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  );
+  await screenshot(mobileLogin, "14-login-movil.png");
   assert.deepEqual(pageErrors, []);
   passed(
     "UI-11",

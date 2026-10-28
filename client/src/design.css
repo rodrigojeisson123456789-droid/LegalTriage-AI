@@ -1,0 +1,1011 @@
+/* Shared visual language: readable type, warm surfaces and clear focus states. */
+:root {
+  --ink: #183e34;
+  --muted: #586f64;
+  --green: #23634f;
+  --line: #dce5df;
+  --paper: #f6f7f3;
+  --gold: #ad8a4c;
+  background: var(--paper);
+  color: var(--ink);
+}
+button,
+a,
+input,
+select,
+textarea {
+  transition:
+    background-color 0.16s,
+    border-color 0.16s,
+    box-shadow 0.16s;
+}
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #397d63;
+  outline-offset: 4px;
+}
+.primary {
+  background: var(--green);
+  border-radius: 9px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 650;
+  box-shadow: 0 2px 3px #173e3410;
+}
+.primary:hover:not(:disabled) {
+  background: #174c3b;
+  box-shadow: 0 4px 10px #173e3420;
+}
+.card {
+  border-color: var(--line);
+  border-radius: 15px;
+  box-shadow: 0 4px 18px #1d443508;
+}
+.shell label {
+  font-size: 13px;
+  color: #304d40;
+  line-height: 1.5;
+}
+.shell input,
+.shell textarea,
+.shell select {
+  font-size: 14px;
+  min-height: 44px;
+  border-radius: 8px;
+  border-color: #ccd9d0;
+  padding: 12px 13px;
+}
+.shell input::placeholder,
+.shell textarea::placeholder {
+  color: #74877c;
+}
+.shell input:focus,
+.shell textarea:focus,
+.shell select:focus {
+  border-color: #397d63;
+  outline: 2px solid #b6d7c580;
+  outline-offset: 1px;
+}
+.shell input[type="checkbox"],
+.shell input[type="radio"] {
+  min-height: 0;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  accent-color: var(--green);
+}
+.shell .help,
+.shell .intro {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.shell .intro {
+  font-size: 14px;
+  max-width: 720px;
+}
+.shell h2 {
+  font-size: 19px;
+  font-weight: 650;
+}
+.shell h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+.shell .eyebrow {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 1.8px;
+  color: #37725b;
+}
+.shell .notice,
+.shell .error {
+  font-size: 13px;
+  line-height: 1.75;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.shell .consent {
+  font-size: 12px;
+  color: #516b5c;
+  line-height: 1.75;
+  gap: 10px;
+}
+.shell .consent input {
+  margin-top: 3px;
+  flex: 0 0 17px;
+}
+.shell footer {
+  font-size: 11px;
+  color: #64786c;
+  gap: 16px;
+}
+/* The public form and sign-in get a calm, full-width entry layout. */
+.shell-public,
+.shell-login {
+  display: block;
+  background: var(--paper);
+}
+.shell-public > aside,
+.shell-login > aside {
+  position: static;
+  inset: auto;
+  width: 100%;
+  min-height: 92px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px max(32px, calc((100vw - 1240px) / 2));
+  background: #fff;
+  border-right: 0;
+  border-bottom: 1px solid var(--line);
+  gap: 20px;
+}
+.shell-public .workspace,
+.shell-public nav,
+.shell-login .workspace,
+.shell-login nav,
+.shell-login .aside-bottom button {
+  display: none;
+}
+.shell-public .aside-bottom,
+.shell-login .aside-bottom {
+  position: static;
+  margin: 0;
+}
+.shell-public .secure,
+.shell-login .secure {
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+  align-items: center;
+  color: #3a6350;
+}
+.shell-public .secure small,
+.shell-login .secure small {
+  font-size: 11px;
+  color: #687d70;
+}
+.shell-public > .main,
+.shell-login > .main {
+  margin: 0;
+  width: 100%;
+}
+.shell-public header,
+.shell-login header {
+  display: none;
+}
+.shell-public main,
+.shell-login main {
+  max-width: 1304px;
+  padding: 54px 32px 0;
+}
+.shell-public h1 {
+  font-size: clamp(30px, 3.3vw, 45px);
+  line-height: 1.18;
+  max-width: 810px;
+  letter-spacing: -1.8px;
+  font-weight: 750;
+  margin-bottom: 20px;
+}
+.shell-public .intro {
+  margin-bottom: 36px;
+  max-width: 680px;
+}
+.shell-public .public-grid {
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 30px;
+}
+.shell-public .card-heading {
+  padding: 26px 30px;
+  background: #fff;
+  border-radius: 15px 15px 0 0;
+  gap: 15px;
+}
+.shell-public .card-heading p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.shell-public .icon-box {
+  width: 47px;
+  height: 47px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  background: #edf5ee;
+}
+.shell-public .step {
+  font-size: 11px;
+  color: #627b69;
+  background: #f1f5f0;
+  padding: 7px 10px;
+  border-radius: 30px;
+  white-space: nowrap;
+}
+.shell-public form {
+  padding: 30px;
+}
+.shell-public .section-label {
+  font-size: 11px;
+  color: #538264;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.shell-public .section-label span {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #4d6957;
+}
+.shell-public .fields {
+  gap: 22px;
+}
+.shell-public .second {
+  margin-top: 34px;
+}
+.shell-public textarea {
+  min-height: 160px;
+}
+.shell-public .attachment-field {
+  border-radius: 10px;
+  background: #f6f9f5;
+  padding: 18px;
+}
+.shell-public input[type="file"] {
+  padding: 9px;
+  font-size: 12px;
+  background: #fff;
+  max-width: 100%;
+}
+.shell-public input::file-selector-button {
+  font: inherit;
+  color: var(--green);
+  background: #edf4ec;
+  border: 0;
+  border-radius: 5px;
+  padding: 8px 10px;
+  margin-right: 12px;
+  cursor: pointer;
+}
+.shell-public .form-footer > span {
+  font-size: 11px;
+  max-width: 200px;
+  color: #5f7867;
+  line-height: 1.5;
+}
+.shell-public .form-footer .primary {
+  padding: 14px 22px;
+  font-size: 14px;
+}
+.shell-public .guidance {
+  background: #e9f0e7;
+  border: 1px solid #d7e1d3;
+  border-radius: 15px;
+  padding: 30px 26px;
+}
+.shell-public .guidance .eyebrow {
+  font-size: 10px;
+  color: #527055;
+}
+.shell-public .guidance h2 {
+  font-family: Georgia, serif;
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.6px;
+  color: #284b37;
+}
+.shell-public .guidance > p {
+  font-size: 13px;
+  line-height: 1.85;
+  color: #506a55;
+  margin: 20px 0 28px;
+}
+.shell-public .process {
+  gap: 13px;
+  margin-bottom: 23px;
+}
+.shell-public .process > span {
+  width: 31px;
+  height: 31px;
+  font-size: 11px;
+  background: #f7f9f2;
+  color: #446c4b;
+}
+.shell-public .process h3 {
+  font-size: 13px;
+  margin: 1px 0 5px;
+  color: #34563e;
+}
+.shell-public .process p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: #536d59;
+}
+.shell-public .guidance-foot {
+  font-size: 11px;
+  color: #536e55;
+}
+.shell-public .specialties {
+  padding: 26px 4px;
+}
+.shell-public .specialties h3 {
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.shell-public .specialties span {
+  font-size: 11px;
+  padding: 8px 11px;
+  border-radius: 6px;
+  background: #fff;
+  color: #41624d;
+}
+.shell-public .specialties p {
+  font-size: 12px;
+  line-height: 1.75;
+  color: #5e7362;
+}
+.shell-public .success {
+  padding: 46px 30px;
+}
+.shell-public .success p {
+  font-size: 14px;
+}
+/* Sign-in: workspace introduction plus a single, focused form. */
+.login-layout {
+  display: grid;
+  grid-template-columns: 1.08fr 1fr;
+  max-width: 1080px;
+  margin: 18px auto 60px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 12px 45px #1d44350a;
+}
+.login-story {
+  padding: 48px;
+  background: #193f33;
+  color: #eff5ea;
+  position: relative;
+}
+.story-symbol {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border: 1px solid #76948270;
+  border-radius: 18px;
+  color: #d7c391;
+  margin-bottom: 48px;
+}
+.shell-login .login-story .eyebrow {
+  color: #b7cfba;
+  font-size: 10px;
+}
+.shell-login .login-story h2 {
+  font-family: Georgia, serif;
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1.18;
+  letter-spacing: -0.6px;
+  color: #faf9ef;
+  margin: 16px 0 22px;
+}
+.login-story > p {
+  font-size: 14px;
+  color: #c0d1c3;
+  line-height: 1.9;
+  margin-bottom: 30px;
+  max-width: 350px;
+}
+.login-story ul {
+  list-style: none;
+  display: grid;
+  gap: 18px;
+  padding: 0;
+  margin: 0;
+}
+.login-story li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+  color: #e0ebdf;
+}
+.login-story li svg {
+  color: #b8cfb9;
+  flex-shrink: 0;
+}
+.story-signature {
+  margin-top: 48px;
+  padding-top: 22px;
+  border-top: 1px solid #8da68f40;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: #d0ddc9;
+}
+.story-signature span {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0;
+  color: #b7cdbb;
+  margin-top: 8px;
+}
+.shell-login .login {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 50px 42px;
+  margin: 0;
+  max-width: none;
+  align-self: center;
+}
+.shell-login .login h1 {
+  font-size: 30px;
+  line-height: 1.3;
+  letter-spacing: -1px;
+  margin: 0 0 14px;
+}
+.shell-login .login > p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.shell-login .login form {
+  padding: 24px 0 8px;
+}
+.shell-login .login form > label {
+  margin-bottom: 22px;
+}
+.login-password {
+  position: relative;
+  margin-bottom: 24px;
+}
+.login-password label {
+  margin: 0 !important;
+}
+.login-password input {
+  padding-right: 48px;
+}
+.password-visibility {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  width: 42px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: #567461;
+  border-radius: 6px;
+}
+.password-visibility:hover {
+  background: #edf4ec;
+}
+.shell-login .login .primary {
+  width: 100%;
+  justify-content: center;
+  font-size: 14px;
+  gap: 12px;
+  min-height: 48px;
+}
+.shell-login .login .login-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.login-note svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #4b7258;
+}
+/* Workspace and private dialogs: denser than the entry pages, with larger type. */
+.shell-team aside {
+  background: #fff;
+  padding: 30px 20px;
+}
+.shell-team .brand {
+  font-size: 21px;
+}
+.brand-icon {
+  flex-shrink: 0;
+}
+.shell-team .workspace {
+  font-size: 10px;
+  color: #64786b;
+  margin-top: 45px;
+}
+.shell-team nav {
+  gap: 6px;
+}
+.shell-team nav button {
+  font-size: 13px;
+  padding: 14px;
+  min-height: 46px;
+  border-radius: 9px;
+  color: #526c5c;
+}
+.shell-team nav button:hover {
+  background: #f3f6f0;
+}
+.shell-team nav button.active {
+  background: #e6f0e7;
+  color: #205e46;
+  box-shadow: inset 3px 0 #347a58;
+}
+.shell-team header {
+  height: 76px;
+  font-size: 12px;
+  color: #687b70;
+}
+.shell-team header strong {
+  color: #385c48;
+}
+.shell-team .header-note {
+  font-size: 11px;
+}
+.shell-team main {
+  padding-top: 40px;
+}
+.shell-team h1 {
+  font-size: 34px;
+  letter-spacing: -1.3px;
+}
+.shell-team .stats {
+  gap: 18px;
+  margin: 30px 0;
+}
+.shell-team .stats .card {
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  border-top: 3px solid #d4e4d4;
+}
+.shell-team .stats .card:first-child {
+  border-top-color: #34795a;
+}
+.shell-team .stats span {
+  font-size: 12px;
+  color: #536c5b;
+}
+.shell-team .stats strong {
+  font-size: 34px;
+  font-weight: 700;
+  color: #214c36;
+  margin-top: 16px;
+}
+.shell-team .table-heading {
+  padding: 24px;
+}
+.shell-team .table-heading h2 {
+  font-size: 19px;
+}
+.shell-team table {
+  font-size: 13px;
+}
+.shell-team th {
+  font-size: 10px;
+  color: #496651;
+  background: #eef4ec;
+  letter-spacing: 1px;
+  padding: 17px 18px;
+}
+.shell-team td {
+  padding: 22px 18px;
+  line-height: 1.7;
+}
+.shell-team tbody tr:hover {
+  background: #fbfcf9;
+}
+.shell-team td small {
+  font-size: 11px;
+  color: #62796a;
+  line-height: 1.7;
+}
+.shell-team td select {
+  min-width: 142px;
+  font-size: 12px;
+}
+.shell-team .description {
+  min-width: 240px;
+  max-width: 360px;
+}
+.shell-team .text-button {
+  font-size: 12px;
+  min-height: 32px;
+  color: #2e7351;
+  line-height: 1.7;
+  text-align: left;
+}
+.shell-team .text-button:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.shell-team .status,
+.shell-team .tag {
+  font-size: 11px;
+  padding: 6px 9px;
+  border-radius: 6px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.shell-team .team-grid {
+  gap: 24px;
+}
+.shell-team .team-member {
+  padding: 28px;
+  border-radius: 14px;
+}
+.shell-team .team-member legend {
+  font-size: 12px;
+  color: #54725d;
+}
+.shell-team .team-areas {
+  gap: 10px;
+}
+.shell-team .team-areas label {
+  border: 1px solid var(--line);
+  background: #f7faf5;
+  padding: 9px 12px;
+  border-radius: 7px;
+  gap: 8px;
+  min-height: 40px;
+}
+.shell-team .team-areas label:has(input:checked) {
+  background: #eaf3e7;
+  border-color: #7ba789;
+  color: #25583b;
+}
+.shell-team .team-role {
+  padding: 20px 0;
+}
+.shell-team .password-reset summary {
+  font-size: 13px;
+  min-height: 32px;
+}
+.shell-team .new-user,
+.shell-team .account-card {
+  padding: 30px;
+  border-radius: 15px;
+}
+.shell-team .overlay {
+  background: #15382d80;
+  backdrop-filter: blur(3px);
+}
+.shell-team .document-dialog {
+  width: min(860px, 100%);
+  max-height: 90dvh;
+  padding: 30px;
+  border: 1px solid #d9e3d7;
+  border-radius: 16px;
+  box-shadow: 0 24px 80px #0d2c322b;
+}
+.shell-team .title-row {
+  gap: 18px;
+}
+.shell-team .title-row > button {
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 50%;
+  background: #f0f5ed;
+}
+.shell-team .analysis-text,
+.shell-team .document-result li,
+.shell-team .case-history p {
+  font-size: 14px;
+  line-height: 1.85;
+}
+.shell-team .document-result h3 {
+  font-size: 15px;
+  margin: 24px 0 10px;
+}
+.shell-team .case-history time,
+.shell-team .case-history small {
+  font-size: 12px;
+  color: #577261;
+}
+.shell-team .version-content {
+  padding: 22px;
+  background: #f5f8f0;
+  border-radius: 10px;
+}
+.shell-team .version-content h3,
+.shell-team .version-content h4 {
+  font-size: 14px;
+}
+.shell-team .email-notification {
+  font-size: 13px;
+  padding: 24px;
+  border-radius: 10px;
+}
+.shell-team .email-notification li {
+  font-size: 12px;
+}
+.reply-page {
+  background: var(--paper);
+}
+.reply-card {
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 8px 30px #1b493410;
+}
+.reply-card h2 {
+  font-size: 23px;
+}
+.reply-card h3 {
+  font-size: 15px;
+}
+.reply-card .help {
+  font-size: 12px;
+  color: var(--muted);
+}
+.reply-card .analysis-text {
+  font-size: 15px;
+  line-height: 1.85;
+}
+.reply-card label {
+  font-size: 14px;
+}
+.reply-card textarea {
+  font-size: 16px;
+}
+.reply-card .consent {
+  font-size: 12px;
+}
+@media (max-width: 1150px) {
+  .shell-public .public-grid {
+    grid-template-columns: minmax(0, 1fr) 290px;
+    gap: 24px;
+  }
+  .login-story {
+    padding: 34px;
+  }
+  .shell-login .login {
+    padding: 38px 30px;
+  }
+  .shell-team main {
+    padding: 32px 24px 0;
+  }
+  .shell-team .stats {
+    gap: 12px;
+  }
+  .shell-team .stats .card {
+    padding: 20px;
+  }
+}
+@media (max-width: 900px) {
+  .shell-public .public-grid {
+    grid-template-columns: 1fr;
+  }
+  .shell-public .right-column {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .shell-public .guidance h2 {
+    font-size: 26px;
+  }
+  .login-layout {
+    grid-template-columns: 1fr 1fr;
+  }
+  .shell-login .login-story h2 {
+    font-size: 32px;
+  }
+  .story-symbol {
+    margin-bottom: 30px;
+  }
+}
+@media (max-width: 700px) {
+  .shell-public > aside,
+  .shell-login > aside {
+    padding: 20px;
+    min-height: 80px;
+  }
+  .shell-public .secure,
+  .shell-login .secure {
+    display: none;
+  }
+  .shell-public main,
+  .shell-login main {
+    padding: 32px 20px 0;
+  }
+  .shell-public .brand,
+  .shell-login .brand {
+    font-size: 21px;
+  }
+  .shell-public h1 {
+    font-size: 32px;
+    letter-spacing: -1px;
+  }
+  .shell-public .intro {
+    font-size: 14px;
+    margin-bottom: 26px;
+  }
+  .shell-public .right-column {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .shell-public .card-heading {
+    padding: 20px;
+    gap: 12px;
+  }
+  .shell-public .card-heading h2 {
+    font-size: 17px;
+  }
+  .shell-public .card-heading p {
+    font-size: 12px;
+  }
+  .shell-public .step {
+    display: none;
+  }
+  .shell-public form {
+    padding: 24px 20px;
+  }
+  .shell-public input,
+  .shell-public textarea,
+  .shell-public select {
+    font-size: 16px;
+  }
+  .shell-public .fields {
+    gap: 20px;
+  }
+  .shell-public .form-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+  .shell-public .form-footer > span {
+    max-width: none;
+  }
+  .shell-public .form-footer .primary {
+    width: 100%;
+    justify-content: center;
+  }
+  .shell-public .guidance {
+    padding: 26px;
+  }
+  .shell-public footer,
+  .shell-login footer {
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 24px;
+  }
+  .login-layout {
+    grid-template-columns: 1fr;
+    margin: 0 auto 30px;
+    border-radius: 15px;
+  }
+  .login-story {
+    padding: 28px;
+  }
+  .story-symbol {
+    display: none;
+  }
+  .shell-login .login-story h2 {
+    font-size: 28px;
+  }
+  .login-story > p {
+    font-size: 13px;
+    margin: 14px 0 0;
+    max-width: none;
+  }
+  .login-story ul,
+  .story-signature {
+    display: none;
+  }
+  .shell-login .login {
+    padding: 30px 24px;
+  }
+  .shell-login .login h1 {
+    font-size: 27px;
+  }
+  .shell-login .login input {
+    font-size: 16px;
+  }
+  .shell-team aside {
+    padding: 20px 18px;
+  }
+  .shell-team .workspace {
+    display: none;
+  }
+  .shell-team nav {
+    margin-top: 20px;
+    gap: 5px;
+  }
+  .shell-team nav button {
+    font-size: 11px;
+    padding: 10px;
+    min-height: 42px;
+  }
+  .shell-team .aside-bottom {
+    position: static;
+    margin-top: 14px;
+  }
+  .shell-team .aside-bottom button {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+  .shell-team header {
+    height: 52px;
+    padding: 0 18px;
+    font-size: 11px;
+  }
+  .shell-team main {
+    padding: 28px 18px 0;
+  }
+  .shell-team h1 {
+    font-size: 28px;
+  }
+  .shell-team .stats {
+    gap: 12px;
+    margin: 24px 0;
+  }
+  .shell-team .stats .card {
+    padding: 18px 14px;
+  }
+  .shell-team .stats strong {
+    font-size: 29px;
+  }
+  .shell-team .stats span {
+    font-size: 11px;
+  }
+  .shell-team .table-heading {
+    padding: 20px;
+  }
+  .shell-team .team-member,
+  .shell-team .new-user,
+  .shell-team .account-card {
+    padding: 22px;
+  }
+  .shell-team .overlay {
+    padding: 12px;
+  }
+  .shell-team .document-dialog {
+    padding: 22px;
+    max-height: 94dvh;
+  }
+  .shell-team .analysis-text,
+  .shell-team .document-result li {
+    font-size: 14px;
+  }
+  .shell-team input,
+  .shell-team textarea {
+    font-size: 16px;
+  }
+  .shell-team .document-file {
+    align-items: stretch;
+  }
+  .shell-team .version-content {
+    padding: 16px;
+  }
+  .reply-card {
+    padding: 24px;
+  }
+  .reply-page {
+    padding: 28px 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.shell-team .stats strong {
+  font-family: Manrope, "DM Sans", sans-serif;
+}
+.shell-team td:first-child {
+  min-width: 115px;
+}
+.shell-team td:nth-child(5) {
+  min-width: 170px;
+}
+.shell-team .team-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}

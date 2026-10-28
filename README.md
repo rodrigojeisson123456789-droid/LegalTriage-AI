@@ -305,3 +305,7 @@ MAIL_AUTO_RESPONSE=true
 Reiniciar el servidor tras cambiar la configuración. No hace falta una nueva migración de tablas para estas mejoras; se utilizan las tablas existentes de evaluaciones, enlaces, notificaciones e historial. Los enlaces locales siguen necesitando un origen público HTTPS para abrir desde otros equipos.
 
 Verificación adicional: `node scripts/auto-mail-smoke.js` desde `server/` prueba MySQL real y SMTP simulado (preview, desactivado, sin configuración, aceptado, autenticación rechazada e incierto), aprobación concurrente, privacidad y ausencia de duplicados automáticos. Usa 3002, limpia sus datos y no envía correo real. La prueba de navegador `acceptance-browser.js` comprueba accesos, recarga, navegación atrás y aprobación con SMTP simulado; usar `REPORT_DIR` distinto para conservar las evidencias de ejecuciones previas.
+
+### Diseño de la interfaz
+
+La [guía visual](documentacion/diseno/README.md) incluye vistas previas del formulario y login. El estilo compartido mejora legibilidad, campos, estados, paneles, equipo y ventanas de documentos/evaluación/historial; mantiene los accesos separados y adapta la interfaz a móvil. El login incluye mostrar/ocultar contraseña. No requiere cambios de base de datos ni nuevas dependencias.
