@@ -107,6 +107,20 @@ try {
   await db.query(
     `CREATE TABLE IF NOT EXISTS lawyer_specialties (user_id INT NOT NULL,specialty ENUM('Civil','Corporativo','Familia','Bancario','Laboral') NOT NULL,PRIMARY KEY(user_id,specialty),FOREIGN KEY(user_id) REFERENCES users(id))`,
   );
+  // Añade Penal al final de cada ENUM existente, conservando sus valores y orden.
+  for (const table of ["cases", "lawyer_specialties"]) {
+    const [types] = await db.execute(
+      "SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=? AND COLUMN_NAME='specialty'",
+      [table],
+    );
+    const type = types[0].COLUMN_TYPE;
+    if (!type.includes("'Penal'")) {
+      const expanded = type.slice(0, -1) + ",'Penal')";
+      await db.query(
+        `ALTER TABLE ${table} MODIFY specialty ${expanded} NOT NULL`,
+      );
+    }
+  }
   await db.query(
     `CREATE TABLE IF NOT EXISTS notifications (id INT AUTO_INCREMENT PRIMARY KEY,case_id INT NOT NULL,kind ENUM('clarification','response') NOT NULL,token_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NOT NULL,status ENUM('pending','accepted','failed','uncertain') NOT NULL,created_by INT NOT NULL,created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,UNIQUE(kind,token_hash),FOREIGN KEY(case_id) REFERENCES cases(id),FOREIGN KEY(created_by) REFERENCES users(id))`,
   );
@@ -222,7 +236,7 @@ try {
     }
   }
   console.log(
-    "Esquema MySQL listo (Laboral, documentos y aclaraciones; conserva casos existentes).",
+    "Esquema MySQL listo (Laboral, Penal, documentos y aclaraciones; conserva casos existentes).",
   );
 } finally {
   await db.end();

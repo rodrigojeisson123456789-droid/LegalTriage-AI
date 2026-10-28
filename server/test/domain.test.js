@@ -70,7 +70,7 @@ test("Gemini valida categoría y conserva caso cuando falla", async () => {
     assert.equal(good.specialty, "Familia");
     assert.match(
       payload.systemInstruction.parts[0].text,
-      /Civil, Corporativo, Familia, Bancario, Laboral o Indeterminado/,
+      /Civil, Corporativo, Familia, Bancario, Laboral, Penal o Indeterminado/,
     );
     assert.equal(
       (await classify("consulta", async () => ({ ok: false })))
@@ -82,7 +82,7 @@ test("Gemini valida categoría y conserva caso cuando falla", async () => {
         await classify("consulta", async () => ({
           ok: true,
           json: async () => ({
-            candidates: [{ content: { parts: [{ text: '"Penal"' }] } }],
+            candidates: [{ content: { parts: [{ text: '"Tributario"' }] } }],
           }),
         }))
       ).specialty,
@@ -109,6 +109,34 @@ test("Gemini puede clasificar una consulta laboral", async () => {
     );
     assert.equal(result.specialty, "Laboral");
     assert.equal(result.classification_status, "classified");
+  } finally {
+    if (old === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = old;
+  }
+});
+
+test("Gemini acepta Penal en el esquema y conserva su clasificación", async () => {
+  const old = process.env.GEMINI_API_KEY;
+  process.env.GEMINI_API_KEY = "test-only";
+  try {
+    const result = await classify(
+      "Consulta penal ficticia sobre una denuncia",
+      async (url, options) => {
+        const sent = JSON.parse(options.body);
+        assert.ok(sent.generationConfig.responseSchema.enum.includes("Penal"));
+        assert.match(sent.systemInstruction.parts[0].text, /Penal/);
+        return {
+          ok: true,
+          json: async () => ({
+            candidates: [{ content: { parts: [{ text: '"Penal"' }] } }],
+          }),
+        };
+      },
+    );
+    assert.deepEqual(result, {
+      specialty: "Penal",
+      classification_status: "classified",
+    });
   } finally {
     if (old === undefined) delete process.env.GEMINI_API_KEY;
     else process.env.GEMINI_API_KEY = old;

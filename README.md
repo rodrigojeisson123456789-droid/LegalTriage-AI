@@ -19,7 +19,7 @@ En este entorno se generó un `server/.env` local con secretos aleatorios para d
 
 Configurar `GEMINI_API_KEY` y opcionalmente `GEMINI_MODEL` en el backend. La petición sale a `generativelanguage.googleapis.com` y envía solo la descripción. La clave nunca se expone al navegador. El formulario exige consentimiento explícito para ese envío. Revisar la política de privacidad, las condiciones del proveedor y las obligaciones aplicables antes de recibir datos reales.
 
-El prompt clasifica en Civil, Corporativo, Familia, Bancario o Indeterminado mediante salida JSON estructurada. Una categoría inválida, error, timeout o falta de clave conserva la consulta como Indeterminado con `classification_status=unavailable`; el panel indica revisión manual. La IA es orientativa y no constituye asesoría legal. No hay clasificación simulada ni reintento automático posterior.
+El prompt clasifica en Civil, Corporativo, Familia, Bancario, Laboral, Penal o Indeterminado mediante salida JSON estructurada. Una categoría inválida, error, timeout o falta de clave conserva la consulta como Indeterminado con `classification_status=unavailable`; el panel indica revisión manual. La IA es orientativa y no constituye asesoría legal. No hay clasificación simulada ni reintento automático posterior.
 
 ## Plazos
 
@@ -259,3 +259,14 @@ El [informe del 25 de octubre de 2026](documentacion/pruebas/2026-10-25/README.m
 ### Detalle de errores en la prueba de texto de Gemini
 
 Si AI Studio responde pero la API falla, `npm run gemini:text` muestra HTTP, duración y, ante un error, **Detalle recibido (filtrado)**: código, estado y mensaje del proveedor. Solo lo hace en esta prueba sintética, sin documentos ni datos de clientes. Oculta la clave configurada, URLs y patrones de credenciales, limita el mensaje a 500 caracteres y no imprime metadatos completos. Una respuesta 503 sin error JSON estructurado se identifica sin mostrar HTML. Este diagnóstico no altera las respuestas del panel ni corrige por sí mismo la disponibilidad externa. AI Studio y una clave de API pueden tener cuotas, permisos o rutas de servicio diferentes; que uno funcione no valida el otro.
+
+
+### Especialidad Penal
+
+Penal está disponible en la clasificación de consultas y documentos de Gemini, el esquema validado, el selector de especialidad del caso, las áreas públicas y los perfiles del equipo. Tras actualizar con la aplicación detenida, ejecutar `npm run db:init`: añade Penal al final de los ENUM existentes de casos y especialidades de abogados, conservando valores, orden, registros y responsables. Se puede repetir la migración.
+
+En **Equipo**, Gerencia marca **Penal**, activa disponibilidad y guarda el perfil de quienes atienden esa especialidad. Se admiten las seis especialidades simultáneamente. Las consultas nuevas clasificadas Penal pueden asignarse por menor carga entre los abogados disponibles de esa área. Los casos anteriores no se reclasifican ni reasignan automáticamente: el equipo puede seleccionar Penal manualmente en Consultas y, si no tienen responsable, pulsar **Asignar automáticamente**. Sin abogado disponible el caso queda pendiente de asignación. Los cambios y versiones usan el historial existente.
+
+Esto no cambia la disponibilidad de Google: un error de Gemini conserva el caso/documento y permite revisión manual, aunque Penal ya esté configurado.
+
+Verificación: `npm test`, `npm run build` y, desde `server/`, `node scripts/assignment-smoke.js` (Laboral por defecto). Para Penal, en PowerShell: `$env:SMOKE_SPECIALTY = "Penal"`, después `node scripts/assignment-smoke.js` y finalmente `Remove-Item Env:SMOKE_SPECIALTY`. Requiere MySQL de prueba sin otros perfiles disponibles del área probada, usa la API temporal 3002 y Gemini simulado, comprueba clasificación de texto/PDF, asignación, revisión manual e historial/versiones y limpia sus datos.

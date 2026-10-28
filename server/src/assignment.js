@@ -8,13 +8,14 @@ export const specialties = [
   "Familia",
   "Bancario",
   "Laboral",
+  "Penal",
 ];
 export const profileSchema = z
   .object({
     available: z.boolean(),
     specialties: z
       .array(z.enum(specialties))
-      .max(5)
+      .max(specialties.length)
       .refine((v) => new Set(v).size === v.length, {
         message: "No repitas especialidades.",
       }),

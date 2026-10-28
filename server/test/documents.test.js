@@ -78,6 +78,22 @@ test("análisis envía archivo y consulta y valida referencias, sin crear plazos
     );
     assert.equal(result.status, "analyzed");
     assert.deepEqual(result.analysis, sample);
+    const penal = await analyzeDocument(
+      document,
+      "Consulta penal ficticia",
+      async (url, options) => {
+        const payload = JSON.parse(options.body);
+        assert.ok(
+          payload.generationConfig.responseSchema.properties.specialty.enum.includes(
+            "Penal",
+          ),
+        );
+        assert.match(payload.systemInstruction.parts[0].text, /Penal/);
+        return mock({ ...sample, specialty: "Penal" })();
+      },
+    );
+    assert.equal(penal.analysis.specialty, "Penal");
+
     assert.equal(
       (
         await analyzeDocument(
@@ -98,7 +114,7 @@ test("análisis envía archivo y consulta y valida referencias, sin crear plazos
     );
     assert.match(sent.systemInstruction.parts[0].text, /No calcules plazos/);
     for (const invalid of [
-      { ...sample, specialty: "Penal" },
+      { ...sample, specialty: "Tributario" },
       { ...sample, dates: [{ ...sample.dates[0], page: 2 }] },
       { ...sample, readable: false },
       { summary: "incompleto" },

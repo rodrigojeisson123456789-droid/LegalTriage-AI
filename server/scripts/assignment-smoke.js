@@ -1,4 +1,4 @@
-// Requiere una BD de prueba sin otros perfiles Laboral disponibles. MySQL real,
+// Requiere una BD de prueba sin otros perfiles disponibles del área elegida. MySQL real,
 // Gemini simulado en el proceso temporal; elimina exclusivamente sus fixtures.
 import "dotenv/config";
 import assert from "node:assert/strict";
@@ -6,14 +6,20 @@ import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import bcrypt from "bcryptjs";
+import { PDFDocument } from "pdf-lib";
 import { db } from "../src/db.js";
+const area = process.env.SMOKE_SPECIALTY || "Laboral";
+assert.ok(
+  ["Laboral", "Penal"].includes(area),
+  "SMOKE_SPECIALTY debe ser Laboral o Penal",
+);
 const email = `assignment-${randomBytes(8).toString("hex")}@example.com`,
   password = randomBytes(24).toString("hex"),
   base = "http://127.0.0.1:3002/api",
   users = [],
   ids = [];
 let child, cookie;
-const mock = `globalThis.fetch=async(url,options)=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Unexpected destination');return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify(options.body.includes('indeterminada')?'Indeterminado':'Laboral')}]}}]})}};`;
+const mock = `globalThis.fetch=async(url,options)=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Unexpected destination');return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify(JSON.parse(options.body).generationConfig.responseSchema.type==='OBJECT'?{summary:'Resumen ficticio de prueba',specialty:${JSON.stringify(area)},document_type:'Consulta ficticia',readable:true,findings:[],dates:[],missing_information:[]}:options.body.includes('indeterminada')?'Indeterminado':${JSON.stringify(area)})}]}}]})}};`;
 async function req(path, method = "GET", body, auth = true) {
   return fetch(base + path, {
     method,
@@ -36,8 +42,8 @@ async function make(
       "12345678",
       email,
       "999999999",
-      "Consulta laboral ficticia.",
-      "Laboral",
+      `Consulta ficticia de especialidad ${area}.`,
+      area,
       classification,
       lawyer,
       status,
@@ -47,7 +53,7 @@ async function make(
   return r.insertId;
 }
 async function publicCase(
-  description = "Consulta laboral ficticia por despido sin justificación.",
+  description = `Consulta ficticia para asesoría de especialidad ${area}.`,
 ) {
   const r = await req(
     "/cases",
@@ -72,12 +78,13 @@ async function publicCase(
 }
 try {
   const [existing] = await db.query(
-    "SELECT COUNT(*) AS n FROM lawyer_profiles p JOIN lawyer_specialties s ON s.user_id=p.user_id WHERE p.available=1 AND s.specialty='Laboral'",
+    "SELECT COUNT(*) AS n FROM lawyer_profiles p JOIN lawyer_specialties s ON s.user_id=p.user_id WHERE p.available=1 AND s.specialty=?",
+    [area],
   );
   assert.equal(
     existing[0].n,
     0,
-    "Usa una base de prueba sin otros abogados Laboral disponibles",
+    `Usa una base de prueba sin otros abogados ${area} disponibles`,
   );
   for (const name of ["Abogado A", "Abogado B", "Soporte"]) {
     const [u] = await db.execute(
@@ -119,7 +126,7 @@ try {
     (
       await req(`/team/${users[0]}`, "PUT", {
         available: true,
-        specialties: ["Laboral"],
+        specialties: [area],
       })
     ).status,
     401,
@@ -147,7 +154,7 @@ try {
       (
         await req(`/team/${id}`, "PUT", {
           available: true,
-          specialties: ["Laboral"],
+          specialties: [area],
         })
       ).status,
       204,
@@ -175,12 +182,12 @@ try {
   assert.ok(Math.abs(counts[0].n - counts[1].n) <= 1);
   await req(`/team/${users[1]}`, "PUT", {
     available: false,
-    specialties: ["Laboral"],
+    specialties: [area],
   });
   assert.equal((await publicCase()).lawyer, users[0]);
   await req(`/team/${users[0]}`, "PUT", {
     available: false,
-    specialties: ["Laboral"],
+    specialties: [area],
   });
   const pending = await publicCase();
   assert.equal(pending.lawyer, null);
@@ -210,13 +217,58 @@ try {
     tied.id,
   ]);
   assert.equal(manual[0].lawyer_id, users[1]);
+  // Revisión manual y PDF clasificado: categoría, asignación e historial/versiones.
+  await req(`/team/${users[0]}`, "PUT", {
+    available: true,
+    specialties: [area],
+  });
+  assert.equal(
+    (await req(`/cases/${failed}`, "PATCH", { specialty: area })).status,
+    204,
+  );
+  assert.equal((await req(`/cases/${failed}/auto-assign`, "POST")).status, 200);
+  const pdf = await PDFDocument.create();
+  pdf.addPage();
+  const form = new FormData();
+  for (const [key, value] of Object.entries({
+    name: "Cliente PDF ficticio",
+    document: "12345678",
+    email,
+    phone: "999999999",
+    description: `Consulta ficticia de especialidad ${area} para revisar documentos.`,
+    consent: "true",
+  }))
+    form.set(key, value);
+  form.set("attachment", new Blob([await pdf.save()]), "consulta-ficticia.pdf");
+  const submitted = await fetch(base + "/cases", {
+    method: "POST",
+    body: form,
+  });
+  assert.equal(submitted.status, 201);
+  const created = await submitted.json();
+  ids.push(created.id);
+  assert.equal(created.specialty, area);
+  assert.equal(created.document_status, "analyzed");
+  const [saved] = await db.execute(
+    "SELECT specialty,lawyer_id FROM cases WHERE id=?",
+    [created.id],
+  );
+  assert.equal(saved[0].specialty, area);
+  assert.equal(saved[0].lawyer_id, users[0]);
+  const timeline = await (await req(`/cases/${created.id}/history`)).json();
+  const event = timeline.events.find((e) => e.action === "document.analyzed");
+  const snapshot = await (
+    await req(`/cases/${created.id}/history/${event.id}/version`)
+  ).json();
+  assert.equal(snapshot.payload.analysis.specialty, area);
   console.log(
-    "Assignment smoke OK: configuración y permisos, asignación pública con Gemini simulado, menor carga, empate, concurrencia, cierre excluido, disponibilidad, Indeterminado/fallo y cambio manual.",
+    `Assignment ${area} smoke OK: configuración y permisos, asignación pública con Gemini simulado, menor carga, empate, concurrencia, cierre excluido, disponibilidad, Indeterminado/fallo y cambio manual; PDF, revisión manual y versiones.`,
   );
 } finally {
   child?.kill();
   for (const id of ids) {
     await db.execute("DELETE FROM case_events WHERE case_id=?", [id]);
+    await db.execute("DELETE FROM documents WHERE case_id=?", [id]);
     await db.execute("DELETE FROM cases WHERE id=?", [id]);
   }
   for (const id of users) {

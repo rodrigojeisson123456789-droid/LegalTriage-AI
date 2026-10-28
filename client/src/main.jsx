@@ -522,6 +522,7 @@ function App() {
                         "Familia",
                         "Bancario",
                         "Laboral",
+                        "Penal",
                       ].map((x) => (
                         <span key={x}>
                           {x}
@@ -690,6 +691,7 @@ function App() {
                                   "Familia",
                                   "Bancario",
                                   "Laboral",
+                                  "Penal",
                                   "Indeterminado",
                                 ].map((s) => (
                                   <option key={s}>{s}</option>

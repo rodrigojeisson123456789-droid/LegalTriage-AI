@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-const areas = ["Civil", "Corporativo", "Familia", "Bancario", "Laboral"];
+const areas = [
+  "Civil",
+  "Corporativo",
+  "Familia",
+  "Bancario",
+  "Laboral",
+  "Penal",
+];
 function Member({ member, api, onSaved, user }) {
   const [role, setRole] = useState(member.role);
   const [available, setAvailable] = useState(member.available),
