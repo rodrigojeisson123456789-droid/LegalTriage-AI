@@ -270,3 +270,8 @@ En **Equipo**, Gerencia marca **Penal**, activa disponibilidad y guarda el perfi
 Esto no cambia la disponibilidad de Google: un error de Gemini conserva el caso/documento y permite revisión manual, aunque Penal ya esté configurado.
 
 Verificación: `npm test`, `npm run build` y, desde `server/`, `node scripts/assignment-smoke.js` (Laboral por defecto). Para Penal, en PowerShell: `$env:SMOKE_SPECIALTY = "Penal"`, después `node scripts/assignment-smoke.js` y finalmente `Remove-Item Env:SMOKE_SPECIALTY`. Requiere MySQL de prueba sin otros perfiles disponibles del área probada, usa la API temporal 3002 y Gemini simulado, comprueba clasificación de texto/PDF, asignación, revisión manual e historial/versiones y limpia sus datos.
+
+
+### Instrumento para comparar tiempos
+
+La [ficha de medición](documentacion/medicion-tiempos/README.md) incluye Excel con registro y resumen por tarea, CSV y guía imprimible. Los tiempos están vacíos: primero debe observarse el procedimiento manual real y acordar tareas equivalentes. Permite un piloto de tareas sobre casos preparados mientras Gemini no responde; no contiene resultados de mejora ni usa tiempos simulados como rendimiento real. Guardar una copia externa antes de registrar observaciones.

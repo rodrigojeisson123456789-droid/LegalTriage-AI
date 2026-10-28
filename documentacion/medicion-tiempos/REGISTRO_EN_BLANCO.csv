@@ -1,0 +1,10 @@
+﻿ID del par,Caso,Tarea,Repetición,Orden,Operador (código),Fecha y hora,Resultado manual,Segundos manual,Resultado LegalTriage,Segundos LegalTriage,¿Comparable?,Motivo no comparable,Incidencias / espera / reintentos,Evidencia manual,Evidencia LegalTriage
+P-01,FIC-01,T01,1,Manual → LegalTriage,,,Pendiente,,Pendiente,,Pendiente,,,,
+P-02,FIC-01,T02,1,LegalTriage → Manual,,,Pendiente,,Pendiente,,Pendiente,,,,
+P-03,FIC-01,T03,1,Manual → LegalTriage,,,Pendiente,,Pendiente,,Pendiente,,,,
+P-04,FIC-02,T01,1,LegalTriage → Manual,,,Pendiente,,Pendiente,,Pendiente,,,,
+P-05,FIC-02,T02,1,Manual → LegalTriage,,,Pendiente,,Pendiente,,Pendiente,,,,
+P-06,FIC-02,T03,1,LegalTriage → Manual,,,Pendiente,,Pendiente,,Pendiente,,,,
+P-07,FIC-03,T01,1,Manual → LegalTriage,,,Pendiente,,Pendiente,,Pendiente,,,,
+P-08,FIC-03,T02,1,LegalTriage → Manual,,,Pendiente,,Pendiente,,Pendiente,,,,
+P-09,FIC-03,T03,1,Manual → LegalTriage,,,Pendiente,,Pendiente,,Pendiente,,,,
