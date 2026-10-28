@@ -119,6 +119,15 @@ async function login(page, user) {
   await page.getByRole("button", { name: "Ingresar", exact: true }).click();
   await page.getByRole("heading", { name: "Panel de consultas." }).waitFor();
   assert.ok(page.url().endsWith("/equipo/consultas"));
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Nueva consulta", exact: true })
+      .count(),
+    0,
+  );
+  await page.locator("a.brand").click();
+  await page.getByRole("heading", { name: "Panel de consultas." }).waitFor();
+  assert.ok(page.url().endsWith("/equipo/consultas"));
   await page.reload();
   await page.getByRole("heading", { name: "Panel de consultas." }).waitFor();
   await page.getByRole("button", { name: "Mi cuenta", exact: true }).click();

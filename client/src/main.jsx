@@ -228,10 +228,10 @@ function App() {
       <aside>
         <a
           className="brand"
-          href="#"
+          href={portal ? viewPath(user ? "dashboard" : "login") : "/consulta"}
           onClick={(e) => {
             e.preventDefault();
-            change("public");
+            change(portal ? (user ? "dashboard" : "login") : "public");
           }}
         >
           <span className="brand-icon">
@@ -244,12 +244,14 @@ function App() {
         </a>
         <div className="workspace">ESPACIO DE TRABAJO</div>
         <nav>
-          <button
-            className={view === "public" ? "active" : ""}
-            onClick={() => change("public")}
-          >
-            <Plus size={18} /> Nueva consulta
-          </button>
+          {!portal && (
+            <button
+              className={view === "public" ? "active" : ""}
+              onClick={() => change("public")}
+            >
+              <Plus size={18} /> Nueva consulta
+            </button>
+          )}
           {portal && (
             <>
               <button
