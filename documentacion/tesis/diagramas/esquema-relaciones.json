@@ -1,0 +1,136 @@
+{
+  "revision": "2026-11-01",
+  "source_commit": "4380ba0acaa75ca8cbcf17205ec528c8f21d90df",
+  "source": "Metadatos de information_schema contrastados con server/src/setup.js; sin filas de usuarios o casos.",
+  "tables": [
+    "case_events",
+    "case_versions",
+    "cases",
+    "clarifications",
+    "deadline_reminders",
+    "deadlines",
+    "documents",
+    "evaluations",
+    "lawyer_profiles",
+    "lawyer_specialties",
+    "notifications",
+    "response_links",
+    "users"
+  ],
+  "foreign_keys": [
+    {
+      "child": "case_events",
+      "column_name": "actor_id",
+      "parent": "users",
+      "parent_column": "id"
+    },
+    {
+      "child": "case_events",
+      "column_name": "case_id",
+      "parent": "cases",
+      "parent_column": "id"
+    },
+    {
+      "child": "case_versions",
+      "column_name": "event_id",
+      "parent": "case_events",
+      "parent_column": "id"
+    },
+    {
+      "child": "cases",
+      "column_name": "lawyer_id",
+      "parent": "users",
+      "parent_column": "id"
+    },
+    {
+      "child": "clarifications",
+      "column_name": "case_id",
+      "parent": "cases",
+      "parent_column": "id"
+    },
+    {
+      "child": "clarifications",
+      "column_name": "created_by",
+      "parent": "users",
+      "parent_column": "id"
+    },
+    {
+      "child": "deadline_reminders",
+      "column_name": "deadline_id",
+      "parent": "deadlines",
+      "parent_column": "id"
+    },
+    {
+      "child": "deadlines",
+      "column_name": "case_id",
+      "parent": "cases",
+      "parent_column": "id"
+    },
+    {
+      "child": "deadlines",
+      "column_name": "created_by",
+      "parent": "users",
+      "parent_column": "id"
+    },
+    {
+      "child": "documents",
+      "column_name": "case_id",
+      "parent": "cases",
+      "parent_column": "id"
+    },
+    {
+      "child": "evaluations",
+      "column_name": "approved_by",
+      "parent": "users",
+      "parent_column": "id"
+    },
+    {
+      "child": "evaluations",
+      "column_name": "case_id",
+      "parent": "cases",
+      "parent_column": "id"
+    },
+    {
+      "child": "evaluations",
+      "column_name": "updated_by",
+      "parent": "users",
+      "parent_column": "id"
+    },
+    {
+      "child": "lawyer_profiles",
+      "column_name": "user_id",
+      "parent": "users",
+      "parent_column": "id"
+    },
+    {
+      "child": "lawyer_specialties",
+      "column_name": "user_id",
+      "parent": "users",
+      "parent_column": "id"
+    },
+    {
+      "child": "notifications",
+      "column_name": "case_id",
+      "parent": "cases",
+      "parent_column": "id"
+    },
+    {
+      "child": "notifications",
+      "column_name": "created_by",
+      "parent": "users",
+      "parent_column": "id"
+    },
+    {
+      "child": "response_links",
+      "column_name": "case_id",
+      "parent": "cases",
+      "parent_column": "id"
+    },
+    {
+      "child": "response_links",
+      "column_name": "created_by",
+      "parent": "users",
+      "parent_column": "id"
+    }
+  ]
+}

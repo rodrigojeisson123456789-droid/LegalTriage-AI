@@ -1,0 +1,33 @@
+digraph G {
+graph [rankdir=TB,bgcolor="white",pad=0.3,nodesep=0.3,ranksep=0.4,dpi=180];
+node [shape=box,style="rounded,filled",fillcolor="#faf7f0",color="#ad8a4c",fontname="DejaVu Sans",fontsize=12,margin=0.16];
+edge [color="#68655f",fontname="DejaVu Sans",fontsize=9];
+form [label="Cliente registra consulta\ny adjunto opcional"];
+validate [label="Validar campos, consentimiento\ny archivo (no validez jurídica)"];
+ai [label="Solicitar clasificación / análisis\na Gemini si está disponible"];
+store [label="Guardar caso y documento\nSi IA falla: revisión manual"];
+assign [label="Asignar por especialidad y carga\nSin elegible: pendiente del equipo"];
+review [label="Equipo revisa antecedentes\ny resultado orientativo"];
+questions [label="Equipo solicita aclaración\nCliente responde por enlace privado"];
+reanalyze [label="Equipo solicita reanálisis\nDocumento + respuestas guardadas"];
+approve [label="Abogado redacta, revisa\ny aprueba respuesta y decisión"];
+judicial [label="Seguimiento judicial\nRegistrar fechas verificadas"];
+close [label="Cerrar atención inicial\nNo equivale a concluir juicio"];
+respond [label="Gmail configurado: respuesta aprobada\nEnlace privado para el cliente"];
+remind [label="Panel y Gmail al responsable\n48 h / 24 h / vencido"];
+form -> validate [label=""];
+validate -> form [label="Datos/archivo inválidos"];
+validate -> ai [label="Entrada válida"];
+ai -> store [label="Éxito o fallo conservado"];
+store -> assign [label=""];
+assign -> review [label=""];
+review -> questions [label="Si falta información"];
+questions -> reanalyze [label="Reanálisis opcional"];
+reanalyze -> review [label="Mantiene el mismo caso"];
+questions -> review [label="Respuesta guardada"];
+review -> approve [label="Criterio profesional"];
+approve -> judicial [label="Decisión judicial"];
+approve -> close [label="Decisión de cierre"];
+approve -> respond [label="Aprobación explícita"];
+judicial -> remind [label="Solo plazos registrados"];
+}

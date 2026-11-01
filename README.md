@@ -317,6 +317,8 @@ La [ficha de medición](documentacion/medicion-tiempos/README.md) incluye Excel 
 
 La [descripción funcional y alcance](documentacion/tesis/DESCRIPCION_FUNCIONAL.md), también disponible en [Word editable](documentacion/tesis/DESCRIPCION_FUNCIONAL.docx), relaciona las funciones implementadas con el flujo de atención, los roles, la arquitectura y las evidencias previas. Distingue la intervención humana de la automatización y deja explícitamente pendiente la observación del procedimiento manual y la comparación de tiempos.
 
+La [revisión de objetivos y pendientes](documentacion/tesis/REVISION_OBJETIVOS_Y_PENDIENTES.md) contrasta el alcance de la última copia académica con la implementación 4380ba0 y organiza los criterios de cierre, incluyendo Excel, diagnóstico, piloto, costos y referencias. El [índice de materiales para la tesis](documentacion/tesis/README.md) enlaza los Word y los [diagramas actuales](documentacion/tesis/DIAGRAMAS.md); las propuestas de objetivos necesitan revisión con el asesor y no sustituyen los vigentes.
+
 
 ### Accesos separados y respuesta automática tras aprobación
 

@@ -1,0 +1,20 @@
+digraph G {
+graph [rankdir=TB,bgcolor="white",pad=0.3,nodesep=0.35,ranksep=0.5,dpi=180];
+node [shape=box,style="rounded,filled",fillcolor="#faf7f0",color="#ad8a4c",fontname="DejaVu Sans",fontsize=12,margin=0.16];
+edge [color="#68655f",fontname="DejaVu Sans",fontsize=9];
+cliente [label="Cliente\nReact · /consulta"];
+equipo [label="Gerencia / Soporte / Abogado\nReact · /equipo/*"];
+api [label="Node.js + Express\nSesión, permisos, validación\nCasos y operaciones del equipo"];
+db [label="MySQL 8.4 en Docker\n13 tablas · documentos\nhistorial y versiones"];
+gemini [label="API de Google Gemini\nClasificación y análisis orientativo"];
+worker [label="Temporizador dentro de Node.js\nRecordatorios 48 h / 24 h / vencido\nRequiere API encendida"];
+gmail [label="Nodemailer → Gmail SMTP\nRespuesta aprobada y recordatorios\nAceptación ≠ entrega confirmada"];
+cliente -> api [label="Formulario / enlaces privados"];
+equipo -> api [label="API privada / sesión HttpOnly"];
+api -> db [label="Persistencia y controles de acceso"];
+api -> gemini [label="HTTPS · clave solo en servidor"];
+api -> worker [label="Al arrancar la API"];
+worker -> db [label="Consulta y reserva persistente"];
+worker -> gmail [label="Aviso al responsable"];
+api -> gmail [label="Tras aprobación humana / envío explícito"];
+}
