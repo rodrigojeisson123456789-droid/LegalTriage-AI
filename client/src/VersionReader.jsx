@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import AnalysisContent from "./AnalysisContent.jsx";
+import AnalysisContext from "./AnalysisContext.jsx";
 export default function VersionReader({ caseId, eventId, api }) {
   const [open, setOpen] = useState(false),
     [data, setData] = useState(null),
@@ -93,6 +94,7 @@ export default function VersionReader({ caseId, eventId, api }) {
                 revisión del abogado.
               </p>
               <AnalysisContent analysis={payload.analysis} />
+              <AnalysisContext context={payload.analysis_context} />
             </>
           )}
         </section>

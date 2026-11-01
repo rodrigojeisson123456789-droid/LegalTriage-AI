@@ -9,6 +9,32 @@
   background: var(--paper);
   color: var(--ink);
 }
+.analysis-context {
+  margin: 20px 0;
+  padding: 18px;
+  background: #faf7f0;
+  border: 1px solid #dfd5be;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.analysis-context h3 {
+  margin-top: 0;
+}
+.analysis-context summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 12px 0;
+  font-weight: 600;
+}
+.analysis-context summary:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 3px;
+}
+.analysis-clarification {
+  border-top: 1px solid #dfd5be;
+  padding-top: 14px;
+  margin-top: 10px;
+}
 button,
 a,
 input,

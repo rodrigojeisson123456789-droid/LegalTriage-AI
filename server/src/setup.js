@@ -21,10 +21,18 @@ try {
   analysis_status ENUM('analyzed','unavailable') NOT NULL,
   failure_reason VARCHAR(50) NULL,
   analysis JSON NULL,
+  analysis_context JSON NULL,
   analyzed_at DATETIME NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(case_id) REFERENCES cases(id)
 )`);
+  const [contextColumns] = await db.query(
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documents' AND COLUMN_NAME='analysis_context'",
+  );
+  if (!contextColumns.length)
+    await db.query(
+      "ALTER TABLE documents ADD COLUMN analysis_context JSON NULL",
+    );
   // Amplía los ENUM de forma aditiva; conserva el orden y los valores existentes.
   const [columns] = await db.query(
     "SELECT COLUMN_NAME,COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='cases' AND COLUMN_NAME IN ('specialty','status')",
@@ -206,7 +214,7 @@ try {
       }
       if (!kinds.has("document")) {
         const [rows] = await connection.execute(
-          "SELECT id,original_name,page_count,analysis FROM documents WHERE case_id=? AND analysis IS NOT NULL",
+          "SELECT id,original_name,page_count,analysis,analysis_context FROM documents WHERE case_id=? AND analysis IS NOT NULL",
           [item.id],
         );
         if (rows.length) {
@@ -220,6 +228,10 @@ try {
             document_id: row.id,
             name: row.original_name,
             pages: row.page_count,
+            analysis_context:
+              typeof row.analysis_context === "string"
+                ? JSON.parse(row.analysis_context)
+                : row.analysis_context,
             analysis:
               typeof row.analysis === "string"
                 ? JSON.parse(row.analysis)

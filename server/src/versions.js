@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { analysisSchema } from "./documents.js";
+import { analysisContextSchema } from "./analysis-context.js";
 const evaluation = z
   .object({
     notes: z.string().max(10000),
@@ -17,6 +18,7 @@ const document = z
     name: z.string().max(180),
     pages: z.number().int().positive(),
     analysis: analysisSchema,
+    analysis_context: analysisContextSchema.nullable().optional(),
   })
   .strict();
 export function versionPayload(kind, payload) {

@@ -1,4 +1,5 @@
 import AnalysisContent from "./AnalysisContent.jsx";
+import AnalysisContext from "./AnalysisContext.jsx";
 import React, { useEffect, useRef, useState } from "react";
 
 const reasons = {
@@ -52,7 +53,7 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
         if (e.key === "Escape" && !busy) onClose();
         if (e.key === "Tab") {
           const elements = e.currentTarget.querySelectorAll(
-            "button:not(:disabled),a[href]",
+            "button:not(:disabled),a[href],summary",
           );
           const first = elements[0],
             last = elements[elements.length - 1];
@@ -85,7 +86,10 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
           </button>
         </div>
         <p className="help">
-          Análisis orientativo. Contrasta cada dato con el documento original.
+          Análisis orientativo. Contrasta cada dato con el documento original.{" "}
+          El documento se analiza automáticamente al registrar la consulta.
+          Abrir esta ventana muestra el resultado guardado; no inicia otro
+          análisis.
         </p>
         {error && (
           <div className="error" role="alert">
@@ -123,6 +127,30 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
             )}
             {doc.analysis && (
               <>
+                {doc.analyzed_at && (
+                  <p className="help">
+                    Último análisis guardado:{" "}
+                    {new Date(doc.analyzed_at).toLocaleString("es-PE", {
+                      timeZone: "America/Lima",
+                    })}{" "}
+                    (hora de Lima).
+                  </p>
+                )}
+                {doc.analysis_outdated && (
+                  <div className="notice" role="status">
+                    {doc.analysis_context
+                      ? `Hay ${doc.new_clarifications_count} aclaración(es) reciente(s) sin incorporar a este análisis.`
+                      : "Hay respuestas del cliente y este análisis antiguo no registra cuáles recibió."}
+                    {" "}Pulsa «Volver a analizar» para enviar las respuestas actuales.
+                  </div>
+                )}
+                {doc.failure_reason && (
+                  <div className="notice">
+                    El último intento no se completó: {doc.failure_message} Se
+                    muestra el análisis anterior guardado.
+                  </div>
+                )}
+                <AnalysisContext context={doc.analysis_context} />
                 <AnalysisContent analysis={doc.analysis} />
               </>
             )}
@@ -139,7 +167,9 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
             </button>
             <p className="help">
               El análisis puede tardar hasta 2 minutos. Las referencias de la IA
-              también requieren comprobación.
+              también requieren comprobación. Se enviarán las respuestas del
+              cliente que estén guardadas en «Aclaraciones» (hasta las 20 más
+              recientes).
             </p>
           </article>
         ))}

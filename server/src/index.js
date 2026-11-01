@@ -30,8 +30,12 @@ import {
 import {
   publicClarifications,
   privateClarifications,
-  withClarificationContext,
+  getClarificationContext,
 } from "./clarifications.js";
+import {
+  formatClarificationContext,
+  clarificationFreshness,
+} from "./analysis-context.js";
 import { db } from "./db.js";
 import {
   caseSchema,
@@ -86,6 +90,11 @@ app.post(
         : req.body.consent,
     });
     const document = req.file ? await validateDocument(req.file) : null;
+    const initialContext = {
+      source: "initial",
+      total_answered: 0,
+      clarifications: [],
+    };
     const result = document
       ? await analyzeDocument(document, input.description)
       : null;
@@ -115,7 +124,7 @@ app.post(
       id = created.insertId;
       if (document) {
         const [savedDocument] = await connection.execute(
-          "INSERT INTO documents (case_id,original_name,mime_type,page_count,content,analysis_status,failure_reason,analysis,analyzed_at) VALUES (?,?,?,?,?,?,?,?,?)",
+          "INSERT INTO documents (case_id,original_name,mime_type,page_count,content,analysis_status,failure_reason,analysis,analysis_context,analyzed_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
           [
             id,
             document.name,
@@ -125,6 +134,7 @@ app.post(
             result.status,
             result.reason,
             result.analysis ? JSON.stringify(result.analysis) : null,
+            result.analysis ? JSON.stringify(initialContext) : null,
             result.analysis ? new Date() : null,
           ],
         );
@@ -158,6 +168,7 @@ app.post(
             name: document.name,
             pages: document.pages,
             analysis: result.analysis,
+            analysis_context: initialContext,
           });
       }
       await autoAssign(connection, id);
@@ -270,20 +281,30 @@ app.get("/api/cases", async (req, res) => {
 app.get("/api/cases/:id/documents", async (req, res) => {
   const id = z.coerce.number().int().positive().parse(req.params.id);
   const [rows] = await db.execute(
-    "SELECT id,original_name,mime_type,page_count,analysis_status,failure_reason,analysis,analyzed_at FROM documents WHERE case_id=?",
+    "SELECT id,original_name,mime_type,page_count,analysis_status,failure_reason,analysis,analysis_context,analyzed_at FROM documents WHERE case_id=?",
     [id],
   );
+  const currentContext = await getClarificationContext(id);
   res.set("Cache-Control", "no-store").json(
-    rows.map((row) => ({
-      ...row,
-      failure_message: row.failure_reason
-        ? analysisErrorMessage(row.failure_reason)
-        : null,
-      analysis:
-        typeof row.analysis === "string"
-          ? JSON.parse(row.analysis)
-          : row.analysis,
-    })),
+    rows.map((row) => {
+      const context =
+        typeof row.analysis_context === "string"
+          ? JSON.parse(row.analysis_context)
+          : row.analysis_context;
+      return {
+        ...row,
+        analysis_context: context,
+        available_clarifications_count: currentContext.total_answered,
+        ...clarificationFreshness(context, currentContext),
+        failure_message: row.failure_reason
+          ? analysisErrorMessage(row.failure_reason)
+          : null,
+        analysis:
+          typeof row.analysis === "string"
+            ? JSON.parse(row.analysis)
+            : row.analysis,
+      };
+    }),
   );
 });
 app.get("/api/documents/:id/download", async (req, res) => {
@@ -311,9 +332,12 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
   if (!rows.length)
     return res.status(404).json({ error: "Documento no encontrado" });
   const row = rows[0];
+  // Captura una sola vez las respuestas enviadas. Si llega otra durante la
+  // generación, GET /documents la detectará como pendiente de incorporar.
+  const context = await getClarificationContext(row.case_id);
   const result = await analyzeDocument(
     { buffer: row.content, mime: row.mime_type, pages: row.page_count },
-    await withClarificationContext(row.case_id, row.description),
+    formatClarificationContext(row.description, context),
   );
   // Conserva el análisis anterior, pero registra el diagnóstico del último intento.
   if (result.status !== "analyzed") {
@@ -355,8 +379,14 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
     ]);
     await guardCaseWrite(req, connection, row.case_id);
     await connection.execute(
-      "UPDATE documents SET analysis_status=?,failure_reason=NULL,analysis=?,analyzed_at=? WHERE id=?",
-      [result.status, JSON.stringify(result.analysis), new Date(), id],
+      "UPDATE documents SET analysis_status=?,failure_reason=NULL,analysis=?,analysis_context=?,analyzed_at=? WHERE id=?",
+      [
+        result.status,
+        JSON.stringify(result.analysis),
+        JSON.stringify(context),
+        new Date(),
+        id,
+      ],
     );
     await connection.execute(
       "UPDATE cases SET specialty=?,classification_status=? WHERE id=?",
@@ -376,6 +406,7 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
       name: row.original_name,
       pages: row.page_count,
       analysis: result.analysis,
+      analysis_context: context,
     });
     await recordEvent(connection, row.case_id, "case.classified", req.user, {
       specialty: result.analysis.specialty,

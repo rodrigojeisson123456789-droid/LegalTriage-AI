@@ -22,7 +22,7 @@ const analysis = {
   dates: [],
   missing_information: [],
 };
-const mock = `let n=0;globalThis.fetch=async(url)=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Destino inesperado');n++;if(n===3)return {ok:false,status:503,json:async()=>({})};return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({...${JSON.stringify(analysis)},summary:'Análisis ficticio '+n})}]}}]})}};await import('./src/index.js');`;
+const mock = `let n=0;globalThis.fetch=async(url)=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Destino inesperado');n++;if(n>=3&&n<=5)return {ok:false,status:503,json:async()=>({})};return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({...${JSON.stringify(analysis)},summary:'Análisis ficticio '+n})}]}}]})}};await import('./src/index.js');`;
 async function req(cookie, path, method = "GET", body) {
   return fetch(base + path, {
     method,

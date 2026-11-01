@@ -92,7 +92,7 @@ export default function CaseHistory({ caseId, api, onClose }) {
         if (e.key === "Escape") onClose();
         if (e.key === "Tab") {
           const buttons = e.currentTarget.querySelectorAll(
-            "button:not(:disabled)",
+            "button:not(:disabled),summary",
           );
           const first = buttons[0],
             last = buttons[buttons.length - 1];

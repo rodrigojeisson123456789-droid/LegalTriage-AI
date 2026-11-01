@@ -60,7 +60,7 @@ const analysis = {
     "Confirma la fecha de ingreso y si recibiste una carta de despido.",
   ],
 };
-const mock = `import nodemailer from ${JSON.stringify(import.meta.resolve("nodemailer"))};nodemailer.createTransport=()=>({sendMail:async m=>{if(!m.to.endsWith('@example.com')||m.text.includes('RESERVADO'))throw new Error('Mensaje de prueba inválido');return {accepted:[m.to]};},close(){}});let n=0;globalThis.fetch=async url=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Destino externo inesperado');n++;return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({...${JSON.stringify(analysis)},summary:n===1?${JSON.stringify(analysis.summary)}:'Consulta laboral ficticia con aclaraciones incorporadas. Segunda versión de prueba.'})}]}}]})}};await import('./src/index.js');`;
+const mock = `import nodemailer from ${JSON.stringify(import.meta.resolve("nodemailer"))};nodemailer.createTransport=()=>({sendMail:async m=>{if(!m.to.endsWith('@example.com')||m.text.includes('RESERVADO'))throw new Error('Mensaje de prueba inválido');return {accepted:[m.to]};},close(){}});let n=0;globalThis.fetch=async(url,options)=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Destino externo inesperado');n++;const context=JSON.parse(options.body).contents[0].parts[0].text;if(n>1&&!context.includes('DATOS FICTICIOS: ingresé en enero de 2023 y no recibí carta de despido.'))throw new Error('Faltan aclaraciones en la solicitud real');return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({...${JSON.stringify(analysis)},summary:n===1?${JSON.stringify(analysis.summary)}:'Consulta laboral ficticia con aclaraciones incorporadas. Segunda versión de prueba.'})}]}}]})}};await import('./src/index.js');`;
 async function seed(name, role) {
   const email = `aceptacion-${role}-${users.length}-${suffix}@example.com`;
   const [u] = await db.execute(
@@ -496,12 +496,17 @@ try {
     "Guardados desde la interfaz; cada revisión mantiene sus fundamentos y respuesta. Solo lectura.",
   );
   await row.getByRole("button", { name: "Ver documentos y análisis" }).click();
+  await p.getByText(/Hay 1 aclaración\(es\) reciente\(s\) sin incorporar/).waitFor();
   await p
     .getByRole("button", { name: "Volver a analizar", exact: true })
     .click();
   const summary2 =
     "Consulta laboral ficticia con aclaraciones incorporadas. Segunda versión de prueba.";
   await p.getByText(summary2, { exact: true }).waitFor();
+  await p.getByText("1 aclaración(es) enviada(s) en este análisis.", { exact: true }).waitFor();
+  await p.getByText("Ver preguntas y respuestas enviadas", { exact: true }).click();
+  await p.locator(".analysis-context").getByText("DATOS FICTICIOS: ingresé en enero de 2023 y no recibí carta de despido.", { exact: true }).waitFor();
+  assert.equal(await p.getByText(/sin incorporar a este análisis/).count(), 0);
   await p.getByRole("button", { name: "Cerrar documentos" }).click();
   await row.getByRole("button", { name: "Historial del caso" }).click();
   const entries = p
