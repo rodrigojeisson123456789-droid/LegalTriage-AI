@@ -88,6 +88,9 @@ function App() {
   const sessionRequests = useRef(new SessionRequests());
   const identity = useRef(null);
   const loadSequence = useRef(0);
+  const focusedCaseId = useRef(null),
+    pendingCaseFocus = useRef(false);
+  const [focusedCase, setFocusedCase] = useState(null);
   const [view, setView] = useState(portal ? "login" : "public"),
     [user, setUser] = useState(null),
     [cases, setCases] = useState([]),
@@ -113,7 +116,13 @@ function App() {
     [lastSyncAt, setLastSyncAt] = useState(null),
     [now, setNow] = useState(Date.now());
   const [mailSettings, setMailSettings] = useState(null);
+  function clearCaseFocus() {
+    focusedCaseId.current = null;
+    pendingCaseFocus.current = false;
+    setFocusedCase(null);
+  }
   function replaceSession(nextUser) {
+    clearCaseFocus();
     loadSequence.current++;
     sessionRequests.current.invalidate();
     identity.current = nextUser;
@@ -157,12 +166,19 @@ function App() {
     ]);
     setSyncing(true);
     try {
-      const [c, d, u, me, mail] = await Promise.all([
+      const caseId = focusedCaseId.current;
+      const [c, d, u, me, mail, selected] = await Promise.all([
         api("/cases", { signal }),
         api("/deadlines", { signal }),
         api("/users", { signal }),
         api("/me", { signal }),
         api("/mail/config", { signal }).catch(() => null),
+        caseId
+          ? api(`/cases/${caseId}`, { signal }).catch((e) => {
+              if (e.status === 404) return null;
+              throw e;
+            })
+          : null,
       ]);
       if (!current()) return;
       if (
@@ -177,6 +193,15 @@ function App() {
       setDeadlines(d);
       setUsers(u);
       setMailSettings(mail);
+      if (caseId && caseId === focusedCaseId.current) {
+        if (selected) setFocusedCase(selected);
+        else {
+          clearCaseFocus();
+          setError(
+            "El caso seleccionado ya no está disponible para tu cuenta.",
+          );
+        }
+      }
       setSyncError("");
       setLastSyncAt(Date.now());
       setNow(Date.now());
@@ -255,7 +280,8 @@ function App() {
       if (version === sessionRequests.current.version) setBusy(false);
     }
   }
-  function change(v) {
+  function change(v, { keepCaseFocus = false } = {}) {
+    if (!keepCaseFocus) clearCaseFocus();
     if ((v === "public" && portal) || (v === "login" && !portal)) {
       window.location.assign(viewPath(v));
       return;
@@ -267,6 +293,7 @@ function App() {
   }
   useEffect(() => {
     const update = () => {
+      clearCaseFocus();
       setError("");
       setView(
         portal
@@ -279,6 +306,38 @@ function App() {
     window.addEventListener("popstate", update);
     return () => window.removeEventListener("popstate", update);
   }, [portal]);
+  function openDeadlineCase(id) {
+    focusedCaseId.current = id;
+    pendingCaseFocus.current = true;
+    act(async () => {
+      const request = sessionRequests.current.start();
+      try {
+        const row = await api(`/cases/${id}`, {
+          signal: AbortSignal.any([request.signal, AbortSignal.timeout(15000)]),
+        });
+        if (!request.isCurrent() || focusedCaseId.current !== id) return;
+        setFocusedCase(row);
+        setSearch("");
+        setStatusFilter("all");
+        change("dashboard", { keepCaseFocus: true });
+      } catch (e) {
+        if (focusedCaseId.current === id) clearCaseFocus();
+        throw e;
+      } finally {
+        request.finish();
+      }
+    });
+  }
+  useEffect(() => {
+    if (!focusedCase || view !== "dashboard" || !pendingCaseFocus.current)
+      return;
+    const row = document.getElementById(`case-${focusedCase.id}`);
+    if (row) {
+      pendingCaseFocus.current = false;
+      row.scrollIntoView({ block: "center" });
+      row.focus({ preventScroll: true });
+    }
+  }, [focusedCase, view]);
   const input = (label, name, type = "text", extra = {}) => (
     <label>
       {label}
@@ -300,13 +359,15 @@ function App() {
   const alerts = displayDeadlines.filter(
     (d) => d.urgency === "Crítico" || d.urgency === "Próximo",
   );
-  const visibleCases = cases.filter(
-    (c) =>
-      (statusFilter === "all" || c.status === statusFilter) &&
-      `${c.id} ${c.name} ${c.specialty} ${c.description}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
+  const visibleCases = focusedCase
+    ? [focusedCase]
+    : cases.filter(
+        (c) =>
+          (statusFilter === "all" || c.status === statusFilter) &&
+          `${c.id} ${c.name} ${c.specialty} ${c.description}`
+            .toLowerCase()
+            .includes(search.toLowerCase()),
+      );
   return (
     <div
       className={`shell ${!portal ? "shell-public" : view === "login" ? "shell-login" : "shell-team"}`}
@@ -452,10 +513,12 @@ function App() {
                   {syncError}
                 </div>
               )}
-              {view !== "deadlines" && (
+              {view === "dashboard" && (
                 <DeadlineReminder
                   deadlines={displayDeadlines}
                   onOpen={() => change("deadlines")}
+                  onOpenCase={openDeadlineCase}
+                  disabled={busy}
                 />
               )}
             </>
@@ -895,10 +958,27 @@ function App() {
                       placeholder="Buscar caso, cliente o especialidad"
                       aria-label="Buscar consultas"
                       value={search}
-                      onChange={(e) => setSearch(e.target.value)}
+                      onChange={(e) => {
+                        clearCaseFocus();
+                        setSearch(e.target.value);
+                      }}
                     />
                   </label>
                 </div>
+                {focusedCase && (
+                  <div className="notice case-focus-notice">
+                    <span>
+                      Caso #{focusedCase.id} seleccionado desde una alerta.
+                    </span>
+                    <button
+                      type="button"
+                      className="text-button"
+                      onClick={clearCaseFocus}
+                    >
+                      Volver a todas las consultas
+                    </button>
+                  </div>
+                )}
                 <div
                   className="case-filter-bar"
                   role="group"
@@ -915,7 +995,10 @@ function App() {
                       key={value}
                       className={`case-filter ${statusFilter === value ? "selected" : ""}`}
                       aria-pressed={statusFilter === value}
-                      onClick={() => setStatusFilter(value)}
+                      onClick={() => {
+                        clearCaseFocus();
+                        setStatusFilter(value);
+                      }}
                     >
                       {label}
                       <span>
@@ -946,7 +1029,13 @@ function App() {
                     </thead>
                     <tbody>
                       {visibleCases.map((c) => (
-                        <tr key={c.id} role="row" className="case-record">
+                        <tr
+                          key={c.id}
+                          id={`case-${c.id}`}
+                          role="row"
+                          tabIndex={focusedCase ? -1 : undefined}
+                          className={`case-record${focusedCase ? " case-record-focused" : ""}`}
+                        >
                           <td role="cell" className="case-record-heading">
                             <div className="case-reference">
                               <span className="case-number">
@@ -1143,7 +1232,7 @@ function App() {
                       </button>
                     </div>
                   )}
-                  {!cases.length && (
+                  {!cases.length && !focusedCase && (
                     <div className="empty">
                       Aún no hay consultas. Las nuevas solicitudes aparecerán
                       aquí.
@@ -1180,6 +1269,8 @@ function App() {
               </p>
               <DeadlineReminder
                 deadlines={displayDeadlines}
+                onOpenCase={openDeadlineCase}
+                disabled={busy}
                 onOpen={() =>
                   document
                     .getElementById("deadline-agenda")
@@ -1221,7 +1312,17 @@ function App() {
                     <tbody>
                       {displayDeadlines.map((d) => (
                         <tr key={d.id}>
-                          <td>#{d.case_id}</td>
+                          <td>
+                            <button
+                              type="button"
+                              className="text-button"
+                              disabled={busy}
+                              onClick={() => openDeadlineCase(d.case_id)}
+                              aria-label={`Ver caso ${d.case_id} desde agenda`}
+                            >
+                              #{d.case_id}
+                            </button>
+                          </td>
                           <td>{d.client_name}</td>
                           <td>{d.title}</td>
                           <td>{date(d.due_at)}</td>

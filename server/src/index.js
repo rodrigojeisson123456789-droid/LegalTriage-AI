@@ -280,6 +280,18 @@ app.get("/api/cases", async (req, res) => {
   res.json(rows);
 });
 // Estas rutas están después del middleware de sesión. No hay directorio público de archivos.
+app.get("/api/cases/:id", async (req, res) => {
+  const id = z.coerce.number().int().positive().parse(req.params.id);
+  const [rows] = await db.execute(
+    "SELECT c.*,u.name AS lawyer_name FROM cases c LEFT JOIN users u ON u.id=c.lawyer_id WHERE c.id=?",
+    [id],
+  );
+  if (!rows.length)
+    return res
+      .status(404)
+      .json({ error: "Caso no disponible para tu cuenta." });
+  res.json(rows[0]);
+});
 app.get("/api/cases/:id/documents", async (req, res) => {
   const id = z.coerce.number().int().positive().parse(req.params.id);
   const [rows] = await db.execute(

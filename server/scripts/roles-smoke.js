@@ -89,6 +89,15 @@ try {
     foreign,
   ]);
   assert.equal((await req(null, "/cases")).status, 401);
+  assert.equal((await req(null, `/cases/${own}`)).status, 401);
+  for (const actor of [manager, support, lawyer]) {
+    const response = await req(actor.cookie, `/cases/${own}`);
+    assert.equal(response.status, 200);
+    const selected = await response.json();
+    assert.equal(selected.id, own);
+    assert.equal(selected.notes, undefined);
+    assert.equal(selected.password_hash, undefined);
+  }
   assert.equal((await req(support.cookie, "/team")).status, 403);
   assert.equal((await req(lawyer.cookie, "/team")).status, 403);
   const listed = await (await req(lawyer.cookie, "/cases")).json();
@@ -100,6 +109,8 @@ try {
     ),
   );
   for (const path of [
+    `/cases/${foreign}`,
+    `/cases/${unassigned}`,
     `/cases/${foreign}/documents`,
     `/documents/${docs[0].id}/download`,
     `/cases/${foreign}/evaluation`,

@@ -29,6 +29,8 @@ El abogado selecciona un caso e ingresa título y fecha/hora de Lima (UTC−5). 
 
 El equipo consulta casos, plazos, usuarios y sesión al entrar, cambiar de sección, volver a la pestaña, recuperar Internet y cada 10 segundos mientras la página está visible. Las pestañas del mismo origen notifican una consulta nueva o aclaración respondida mediante `BroadcastChannel`, sin transmitir datos personales ni tokens; si el canal está bloqueado, continúa el sondeo. Cada respuesta se verifica contra la sesión y la generación de carga vigente para que una respuesta anterior no sobrescriba datos nuevos. Los GET evitan caché. **Actualizar ahora** permite consultar manualmente y muestra la hora de la última actualización correcta; un error conserva los datos y avisa de que pueden estar desactualizados. Los abogados siguen viendo únicamente sus casos asignados: el refresco no amplía permisos ni elimina filtros de búsqueda/estado.
 
+Las alertas de plazos aparecen únicamente en **Consultas** y **Control de plazos**. Cada aviso permite **Ver caso**: consulta el caso autorizado por su identificador exacto, abre su ficha en Consultas, limpia filtros previos, la resalta y mueve el foco hacia ella. **Volver a todas las consultas** restablece la lista. La ficha seleccionada continúa actualizándose aunque esté fuera de las 500 consultas del listado general; el acceso individual mantiene los permisos del responsable. En la agenda también se puede abrir el caso desde su número. Equipo, Mi cuenta y los portales públicos no muestran esta alerta.
+
 ### Recordatorios automáticos de plazos por Gmail
 
 En `server/.env`, conservar las credenciales de Gmail existentes y añadir:

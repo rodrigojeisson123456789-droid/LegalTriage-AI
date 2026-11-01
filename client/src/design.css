@@ -61,13 +61,49 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 7px 20px;
-  padding: 9px 0;
+  padding: 0;
   border-bottom: 1px solid #ded2bc;
   font-size: 13px;
   overflow-wrap: anywhere;
 }
-.deadline-reminder li > span {
+.shell-team .deadline-case-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  width: 100%;
+  gap: 7px 18px;
+  padding: 12px 8px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+.shell-team .deadline-case-link:hover:not(:disabled) {
+  background: #eadbc15c;
+}
+.deadline-case-link > span:first-child {
   flex: 1 1 220px;
+}
+.deadline-case-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #77501c;
+}
+.case-focus-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 15px 24px;
+}
+.shell-team .case-register .case-record-focused {
+  border-color: #9e7635;
+  box-shadow: 0 0 0 2px #9e763530;
 }
 .shell-team .deadline-reminder .text-button {
   display: inline-flex;

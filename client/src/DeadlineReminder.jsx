@@ -1,7 +1,12 @@
 import React from "react";
 import { BellRing, ArrowRight } from "lucide-react";
 
-export default function DeadlineReminder({ deadlines, onOpen }) {
+export default function DeadlineReminder({
+  deadlines,
+  onOpen,
+  onOpenCase,
+  disabled = false,
+}) {
   const relevant = deadlines.filter(
     (d) =>
       d.urgency !== "Programado" &&
@@ -27,10 +32,23 @@ export default function DeadlineReminder({ deadlines, onOpen }) {
       <ul>
         {relevant.slice(0, 3).map((d) => (
           <li key={d.id}>
-            <span>
-              Caso #{d.case_id} · {d.title}
-            </span>
-            <strong className={`deadline-tone ${d.tone}`}>{d.remaining}</strong>
+            <button
+              type="button"
+              className="deadline-case-link"
+              disabled={disabled}
+              aria-label={`Ver caso ${d.case_id}: ${d.title}`}
+              onClick={() => onOpenCase(d.case_id)}
+            >
+              <span>
+                Caso #{d.case_id} · {d.title}
+              </span>
+              <strong className={`deadline-tone ${d.tone}`}>
+                {d.remaining}
+              </strong>
+              <span className="deadline-case-action">
+                Ver caso <ArrowRight size={15} aria-hidden="true" />
+              </span>
+            </button>
           </li>
         ))}
       </ul>

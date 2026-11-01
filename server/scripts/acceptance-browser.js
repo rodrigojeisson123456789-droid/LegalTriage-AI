@@ -700,6 +700,64 @@ try {
     .getByRole("region", { name: "Recordatorios de plazos" })
     .getByText("1 vencido(s)", { exact: true })
     .waitFor();
+  // Simula un caso fuera de la lista de 500; el acceso individual sigue siendo real.
+  await admin.route("**/api/cases", async (route) => {
+    if (route.request().method() !== "GET") return route.continue();
+    const response = await route.fetch();
+    const rows = await response.json();
+    await route.fulfill({
+      response,
+      json: rows.filter((c) => c.id !== liveCase.insertId),
+    });
+  });
+  await admin
+    .getByRole("button", { name: "Actualizar ahora", exact: true })
+    .click();
+  await admin
+    .getByLabel("Buscar consultas", { exact: true })
+    .fill("consulta-que-no-existe");
+  await admin
+    .getByRole("group", { name: "Filtrar consultas por estado" })
+    .getByRole("button", { name: /En evaluación/ })
+    .click();
+  await admin
+    .getByRole("region", { name: "Recordatorios de plazos" })
+    .getByRole("button", {
+      name: `Ver caso ${liveCase.insertId}: PLAZO FICTICIO CRITICO`,
+      exact: true,
+    })
+    .click();
+  await admin.locator(".case-record-focused").waitFor();
+  assert.equal(await admin.locator(".case-record").count(), 1);
+  assert.equal(
+    await admin.locator(".case-record-focused").getAttribute("id"),
+    `case-${liveCase.insertId}`,
+  );
+  assert.equal(
+    await admin.getByLabel("Buscar consultas", { exact: true }).inputValue(),
+    "",
+  );
+  assert.equal(
+    await admin.evaluate(() => document.activeElement.id),
+    `case-${liveCase.insertId}`,
+  );
+  await admin
+    .locator(".case-record-focused")
+    .getByRole("button", { name: "Historial del caso" })
+    .waitFor();
+  // La selección persiste al refrescar aunque el caso esté fuera del listado general.
+  const selectedRequest = admin.waitForResponse((r) =>
+    r.url().endsWith(`/api/cases/${liveCase.insertId}`),
+  );
+  await admin
+    .getByRole("button", { name: "Actualizar ahora", exact: true })
+    .click();
+  await selectedRequest;
+  await admin.locator(".case-record-focused").waitFor();
+  await admin
+    .getByRole("button", { name: "Volver a todas las consultas", exact: true })
+    .click();
+  await admin.unroute("**/api/cases");
   await admin
     .locator("aside nav")
     .getByRole("button", { name: "Control de plazos", exact: false })
@@ -731,7 +789,25 @@ try {
     "15-recordatorios-plazos.png",
     "Nueva consulta sin nuevo login, sondeo sin avisos entre pestañas, cuatro urgencias, tiempo restante y transición a vencido con reloj del navegador controlado.",
   );
+  await admin
+    .getByRole("region", { name: "Recordatorios de plazos" })
+    .getByRole("button", {
+      name: `Ver caso ${liveCase.insertId}: PLAZO FICTICIO CRITICO`,
+      exact: true,
+    })
+    .click();
+  await admin.getByRole("heading", { name: "Panel de consultas." }).waitFor();
+  assert.equal(
+    await admin.locator(".case-record-focused").getAttribute("id"),
+    `case-${liveCase.insertId}`,
+  );
   await admin.getByRole("button", { name: "Equipo", exact: true }).click();
+  assert.equal(
+    await admin
+      .getByRole("region", { name: "Recordatorios de plazos" })
+      .count(),
+    0,
+  );
   await admin.locator("form.team-member").first().waitFor();
   await screenshot(admin, "11-equipo.png");
   await admin.setViewportSize({ width: 320, height: 844 });
@@ -743,6 +819,12 @@ try {
   await screenshot(admin, "11-equipo-movil.png");
   await admin.getByRole("button", { name: "Mi cuenta", exact: true }).click();
   await admin.getByLabel("Contraseña actual", { exact: true }).waitFor();
+  assert.equal(
+    await admin
+      .getByRole("region", { name: "Recordatorios de plazos" })
+      .count(),
+    0,
+  );
   assert.ok(
     await admin.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -759,7 +841,16 @@ try {
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   );
+  await admin
+    .getByRole("region", { name: "Recordatorios de plazos" })
+    .waitFor();
   await screenshot(admin, "13-plazos-movil.png");
+  passed(
+    "UI-13",
+    "Alertas limitadas y acceso directo al caso",
+    "13-plazos-movil.png",
+    "Sin alerta en Equipo/Mi cuenta; acceso exacto desde Consultas y Plazos, filtros limpiados, caso fuera del listado, foco y selección conservada al refrescar.",
+  );
   const mobileLogin = await newPage({ width: 320, height: 844 });
   await mobileLogin.goto(web + "/equipo/login");
   await mobileLogin.getByLabel("Correo electrónico", { exact: true }).waitFor();
