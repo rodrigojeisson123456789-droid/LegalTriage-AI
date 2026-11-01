@@ -188,6 +188,7 @@ try {
     env: {
       ...process.env,
       PORT: "3004",
+      MAIL_DEADLINE_REMINDERS: "false",
       GEMINI_API_KEY: "mock-not-real",
       MAIL_MODE: "gmail",
       SMTP_USER: "prueba@example.com",
@@ -239,6 +240,14 @@ try {
     executablePath,
     args: ["--no-sandbox"],
   });
+  const p = await newPage();
+  let loginRequests = 0;
+  p.on("request", (r) => {
+    if (r.url().endsWith("/api/login") && r.method() === "POST")
+      loginRequests++;
+  });
+  await login(p, lawyer);
+  const originalLogins = loginRequests;
   const client = await newPage();
   await client.goto(web);
   await client.waitForURL("**/consulta");
@@ -313,12 +322,27 @@ try {
     "01-recepcion.png",
     "Formulario real del navegador; PDF generado para esta prueba, persistido en MySQL.",
   );
-  const p = await newPage();
-  await login(p, lawyer);
+  await p.bringToFront();
   const row = p
     .getByRole("row")
     .filter({ has: p.getByText("#" + caseId, { exact: true }) });
   await row.waitFor();
+  assert.equal(
+    loginRequests,
+    originalLogins,
+    "La nueva consulta aparece sin iniciar sesión otra vez",
+  );
+  // Cambio de otro origen/dispositivo: sin BroadcastChannel ni navegación.
+  const [liveCase] = await db.execute(
+    "INSERT INTO cases(name,document,email,phone,description,specialty,classification_status,lawyer_id) VALUES ('Consulta de actualización automática','12345678',?,'999999999','Caso ficticio para comprobar el sondeo del panel.','Laboral','manual',?)",
+    [suffix + "@example.com", lawyer.id],
+  );
+  ids.push(liveCase.insertId);
+  await p.getByText("#" + liveCase.insertId, { exact: true }).waitFor();
+  assert.equal(loginRequests, originalLogins);
+  await p
+    .getByRole("button", { name: "Actualizar ahora", exact: true })
+    .waitFor();
   assert.equal(
     await row.getByLabel(`Asignar abogado al caso ${caseId}`).inputValue(),
     String(lawyer.id),
@@ -496,16 +520,28 @@ try {
     "Guardados desde la interfaz; cada revisión mantiene sus fundamentos y respuesta. Solo lectura.",
   );
   await row.getByRole("button", { name: "Ver documentos y análisis" }).click();
-  await p.getByText(/Hay 1 aclaración\(es\) reciente\(s\) sin incorporar/).waitFor();
+  await p
+    .getByText(/Hay 1 aclaración\(es\) reciente\(s\) sin incorporar/)
+    .waitFor();
   await p
     .getByRole("button", { name: "Volver a analizar", exact: true })
     .click();
   const summary2 =
     "Consulta laboral ficticia con aclaraciones incorporadas. Segunda versión de prueba.";
   await p.getByText(summary2, { exact: true }).waitFor();
-  await p.getByText("1 aclaración(es) enviada(s) en este análisis.", { exact: true }).waitFor();
-  await p.getByText("Ver preguntas y respuestas enviadas", { exact: true }).click();
-  await p.locator(".analysis-context").getByText("DATOS FICTICIOS: ingresé en enero de 2023 y no recibí carta de despido.", { exact: true }).waitFor();
+  await p
+    .getByText("1 aclaración(es) enviada(s) en este análisis.", { exact: true })
+    .waitFor();
+  await p
+    .getByText("Ver preguntas y respuestas enviadas", { exact: true })
+    .click();
+  await p
+    .locator(".analysis-context")
+    .getByText(
+      "DATOS FICTICIOS: ingresé en enero de 2023 y no recibí carta de despido.",
+      { exact: true },
+    )
+    .waitFor();
   assert.equal(await p.getByText(/sin incorporar a este análisis/).count(), 0);
   await p.getByRole("button", { name: "Cerrar documentos" }).click();
   await row.getByRole("button", { name: "Historial del caso" }).click();
@@ -642,8 +678,59 @@ try {
     "Soporte no ve evaluaciones ni sus versiones; otro abogado no ve el caso.",
   );
   // Visual checks for the remaining workspace screens and a narrow viewport.
+  // Plazos de la segunda consulta, para no afectar el cierre de la primera.
+  for (const [title, hours] of [
+    ["PLAZO FICTICIO VENCIDO", -2],
+    ["PLAZO FICTICIO CRITICO", 6],
+    ["PLAZO FICTICIO PROXIMO", 36],
+    ["PLAZO FICTICIO PROGRAMADO", 72],
+  ])
+    await db.execute(
+      "INSERT INTO deadlines(case_id,title,due_at,created_by) VALUES (?,?,?,?)",
+      [
+        liveCase.insertId,
+        title,
+        new Date(Date.now() + hours * 3600000),
+        lawyer.id,
+      ],
+    );
   const admin = await newPage();
   await login(admin, manager);
+  await admin
+    .getByRole("region", { name: "Recordatorios de plazos" })
+    .getByText("1 vencido(s)", { exact: true })
+    .waitFor();
+  await admin
+    .locator("aside nav")
+    .getByRole("button", { name: "Control de plazos", exact: false })
+    .click();
+  const criticalRow = admin
+    .getByRole("row")
+    .filter({ hasText: "PLAZO FICTICIO CRITICO" });
+  await criticalRow.getByText("Crítico", { exact: true }).waitFor();
+  await criticalRow.getByText(/Vence en/).waitFor();
+  await admin
+    .getByRole("row")
+    .filter({ hasText: "PLAZO FICTICIO VENCIDO" })
+    .getByText("Vencido", { exact: true })
+    .waitFor();
+  await admin
+    .getByRole("row")
+    .filter({ hasText: "PLAZO FICTICIO PROXIMO" })
+    .getByText("Próximo", { exact: true })
+    .waitFor();
+  await screenshot(admin, "15-recordatorios-plazos.png");
+  // El reloj de la vista cambia, sin alterar el reloj del servidor ni llamar a Gmail.
+  await admin.clock.install();
+  await admin.clock.fastForward(7 * 3600000);
+  await criticalRow.getByText("Vencido", { exact: true }).waitFor();
+  await criticalRow.getByText(/Venció hace/).waitFor();
+  passed(
+    "UI-12",
+    "Consultas en vivo y recordatorios de plazos",
+    "15-recordatorios-plazos.png",
+    "Nueva consulta sin nuevo login, sondeo sin avisos entre pestañas, cuatro urgencias, tiempo restante y transición a vencido con reloj del navegador controlado.",
+  );
   await admin.getByRole("button", { name: "Equipo", exact: true }).click();
   await admin.locator("form.team-member").first().waitFor();
   await screenshot(admin, "11-equipo.png");
@@ -663,6 +750,7 @@ try {
   );
   await screenshot(admin, "12-cuenta-movil.png");
   await admin
+    .locator("aside nav")
     .getByRole("button", { name: "Control de plazos", exact: false })
     .click();
   await admin.getByRole("heading", { name: "Control de plazos." }).waitFor();

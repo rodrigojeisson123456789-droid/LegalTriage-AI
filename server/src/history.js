@@ -54,6 +54,20 @@ const rules = {
   "deadline.created": z
     .object({ deadline_id: id, due_at: z.string().datetime() })
     .strict(),
+  "deadline.reminder_requested": z
+    .object({
+      deadline_id: id,
+      reminder_id: id,
+      stage: z.enum(["48h", "24h", "expired"]),
+    })
+    .strict(),
+  "deadline.reminder_result": z
+    .object({
+      deadline_id: id,
+      reminder_id: id,
+      status: z.enum(["accepted", "failed", "uncertain"]),
+    })
+    .strict(),
   "mail.requested": z
     .object({
       notification_id: id,

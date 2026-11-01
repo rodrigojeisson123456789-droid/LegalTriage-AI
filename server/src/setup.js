@@ -11,6 +11,19 @@ try {
   await db.query(
     `CREATE TABLE IF NOT EXISTS deadlines (id INT AUTO_INCREMENT PRIMARY KEY, case_id INT NOT NULL, title VARCHAR(200) NOT NULL, due_at DATETIME NOT NULL, created_by INT NOT NULL, FOREIGN KEY(case_id) REFERENCES cases(id), FOREIGN KEY(created_by) REFERENCES users(id), INDEX(due_at))`,
   );
+  await db.query(`CREATE TABLE IF NOT EXISTS deadline_reminders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    deadline_id INT NOT NULL,
+    recipient_id INT NOT NULL,
+    recipient_email VARCHAR(254) NOT NULL,
+    stage ENUM('48h','24h','expired') NOT NULL,
+    status ENUM('pending','accepted','failed','uncertain') NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(deadline_id,recipient_id,stage),
+    INDEX(deadline_id,id),
+    FOREIGN KEY(deadline_id) REFERENCES deadlines(id) ON DELETE CASCADE
+  )`);
   await db.query(`CREATE TABLE IF NOT EXISTS documents (
   id INT AUTO_INCREMENT PRIMARY KEY,
   case_id INT NOT NULL UNIQUE,

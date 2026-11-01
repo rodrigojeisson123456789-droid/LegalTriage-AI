@@ -19,6 +19,9 @@ notifications.get("/mail/config", (req, res) => {
     configured: c.configured,
     local_only: c.local,
     origin: c.origin,
+    deadline_reminders_enabled: c.deadlineReminders,
+    deadline_reminders_active:
+      c.deadlineReminders && c.mode === "gmail" && c.configured,
   });
 });
 notifications.get("/cases/:id/notifications", async (req, res) => {

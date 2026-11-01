@@ -1,3 +1,4 @@
+import { announceWorkspaceChange } from "./live-refresh.js";
 import EmailNotification from "./EmailNotification.jsx";
 import React, { useEffect, useState, useRef } from "react";
 const date = (v) =>
@@ -287,6 +288,7 @@ export function ClarificationReply({ token, api }) {
                     }),
                   });
                   setDone(true);
+                  announceWorkspaceChange();
                   window.history.replaceState(
                     null,
                     "",

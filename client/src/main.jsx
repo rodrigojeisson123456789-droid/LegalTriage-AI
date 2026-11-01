@@ -26,6 +26,7 @@ import {
   MessageSquareText,
   UserRoundPlus,
   ChevronRight,
+  RefreshCw,
 } from "lucide-react";
 import "./style.css";
 import "./design.css";
@@ -36,8 +37,12 @@ import Team from "./Team.jsx";
 import Account from "./Account.jsx";
 import CaseHistory from "./CaseHistory.jsx";
 import DocumentReview from "./DocumentReview.jsx";
+import { startLiveRefresh, announceWorkspaceChange } from "./live-refresh.js";
+import { deadlineStatus } from "./deadline-status.js";
+import DeadlineReminder from "./DeadlineReminder.jsx";
 async function api(path, options = {}) {
   const r = await fetch("/api" + path, {
+    cache: "no-store",
     ...options,
     headers: {
       ...(!(options.body instanceof FormData)
@@ -82,6 +87,7 @@ function App() {
   const portal = isTeamPath(window.location.pathname);
   const sessionRequests = useRef(new SessionRequests());
   const identity = useRef(null);
+  const loadSequence = useRef(0);
   const [view, setView] = useState(portal ? "login" : "public"),
     [user, setUser] = useState(null),
     [cases, setCases] = useState([]),
@@ -102,7 +108,13 @@ function App() {
     [attachmentName, setAttachmentName] = useState(""),
     [showPassword, setShowPassword] = useState(false),
     [capsLock, setCapsLock] = useState(false);
+  const [syncing, setSyncing] = useState(false),
+    [syncError, setSyncError] = useState(""),
+    [lastSyncAt, setLastSyncAt] = useState(null),
+    [now, setNow] = useState(Date.now());
+  const [mailSettings, setMailSettings] = useState(null);
   function replaceSession(nextUser) {
+    loadSequence.current++;
     sessionRequests.current.invalidate();
     identity.current = nextUser;
     setUser(nextUser);
@@ -122,6 +134,10 @@ function App() {
     setBusy(false);
     setShowPassword(false);
     setCapsLock(false);
+    setSyncing(false);
+    setSyncError("");
+    setLastSyncAt(null);
+    setMailSettings(null);
   }
   function expiredSession() {
     replaceSession(null);
@@ -132,14 +148,23 @@ function App() {
   async function load() {
     if (!identity.current) return;
     const request = sessionRequests.current.start();
+    const sequence = ++loadSequence.current;
+    const current = () =>
+      request.isCurrent() && sequence === loadSequence.current;
+    const signal = AbortSignal.any([
+      request.signal,
+      AbortSignal.timeout(15000),
+    ]);
+    setSyncing(true);
     try {
-      const [c, d, u, me] = await Promise.all([
-        api("/cases", { signal: request.signal }),
-        api("/deadlines", { signal: request.signal }),
-        api("/users", { signal: request.signal }),
-        api("/me", { signal: request.signal }),
+      const [c, d, u, me, mail] = await Promise.all([
+        api("/cases", { signal }),
+        api("/deadlines", { signal }),
+        api("/users", { signal }),
+        api("/me", { signal }),
+        api("/mail/config", { signal }).catch(() => null),
       ]);
-      if (!request.isCurrent()) return;
+      if (!current()) return;
       if (
         me.id !== identity.current?.id ||
         me.role !== identity.current?.role
@@ -151,6 +176,10 @@ function App() {
       setCases(c);
       setDeadlines(d);
       setUsers(u);
+      setMailSettings(mail);
+      setSyncError("");
+      setLastSyncAt(Date.now());
+      setNow(Date.now());
       identity.current = me;
       setUser((previous) =>
         previous?.id === me.id &&
@@ -160,13 +189,17 @@ function App() {
           : me,
       );
     } catch (e) {
-      if (!request.isCurrent() || e.name === "AbortError") return;
+      if (!current() || e.name === "AbortError") return;
       if (e.status === 401) {
         expiredSession();
         return;
       }
+      setSyncError(
+        "No se pudieron actualizar los datos. Se conserva la última información disponible; se reintentará automáticamente.",
+      );
       throw e;
     } finally {
+      if (current()) setSyncing(false);
       request.finish();
     }
   }
@@ -192,18 +225,18 @@ function App() {
   }, []);
   useEffect(() => {
     if (!user) return;
-    let active = true;
-    const refresh = () =>
-      load().catch((e) => {
-        if (active) setError(e.message);
-      });
-    refresh();
-    const timer = setInterval(refresh, 60000);
+    return startLiveRefresh(() => load().catch(() => {}));
+  }, [user?.id, user?.role, view]);
+  useEffect(() => {
+    if (!user) return;
+    const tick = () => setNow(Date.now());
+    const timer = setInterval(tick, 30000);
+    window.addEventListener("focus", tick);
     return () => {
-      active = false;
       clearInterval(timer);
+      window.removeEventListener("focus", tick);
     };
-  }, [user?.id, user?.role]);
+  }, [user?.id]);
   useEffect(() => {
     if (user?.role !== "gerencia" && view === "team") setView("dashboard");
   }, [user?.role, view]);
@@ -255,7 +288,16 @@ function App() {
   const canManage = user?.role === "gerencia";
   const canLegal = ["gerencia", "abogado"].includes(user?.role);
   const canAssign = ["gerencia", "soporte"].includes(user?.role);
-  const alerts = deadlines.filter(
+  const displayDeadlines = deadlines.map((d) => ({
+    ...d,
+    ...deadlineStatus(d.due_at, now),
+  }));
+  const attentionCount = displayDeadlines.filter(
+    (d) =>
+      d.urgency !== "Programado" &&
+      d.case_status !== "Atención inicial cerrada",
+  ).length;
+  const alerts = displayDeadlines.filter(
     (d) => d.urgency === "Crítico" || d.urgency === "Próximo",
   );
   const visibleCases = cases.filter(
@@ -310,7 +352,7 @@ function App() {
                 onClick={() => change(user ? "deadlines" : "login")}
               >
                 <Clock3 size={18} /> Control de plazos{" "}
-                {user && alerts.length > 0 && <span>{alerts.length}</span>}
+                {user && attentionCount > 0 && <span>{attentionCount}</span>}
               </button>
               {canManage && (
                 <button
@@ -382,6 +424,42 @@ function App() {
           </span>
         </header>
         <main>
+          {user && view !== "login" && (
+            <>
+              <div className="workspace-sync">
+                <span>
+                  {lastSyncAt
+                    ? `Datos actualizados a las ${new Date(lastSyncAt).toLocaleTimeString("es-PE", { timeZone: "America/Lima" })} · Lima`
+                    : "Cargando datos del equipo…"}{" "}
+                  · Actualización automática cada 10 s.
+                </span>
+                <button
+                  type="button"
+                  className="secondary"
+                  disabled={syncing}
+                  onClick={() => load().catch(() => {})}
+                >
+                  <RefreshCw
+                    size={15}
+                    aria-hidden="true"
+                    className={syncing ? "button-spinner" : ""}
+                  />{" "}
+                  {syncing ? "Actualizando…" : "Actualizar ahora"}
+                </button>
+              </div>
+              {syncError && (
+                <div className="error" role="alert">
+                  {syncError}
+                </div>
+              )}
+              {view !== "deadlines" && (
+                <DeadlineReminder
+                  deadlines={displayDeadlines}
+                  onOpen={() => change("deadlines")}
+                />
+              )}
+            </>
+          )}
           {sessionNotice && (
             <div className="notice" role="status">
               {sessionNotice}
@@ -458,6 +536,7 @@ function App() {
                           setReceipt(
                             await api("/cases", { method: "POST", body: data }),
                           );
+                          announceWorkspaceChange();
                           setAttachmentName("");
                         });
                       }}
@@ -1099,12 +1178,26 @@ function App() {
               <p className="intro">
                 Anticípate a cada vencimiento. Fechas mostradas en hora de Lima.
               </p>
-              <div className="notice">
-                <Clock3 size={19} /> {alerts.length} plazo(s) requieren atención
-                en las próximas 48 horas. Las alertas se actualizan cada minuto.
-              </div>
+              <DeadlineReminder
+                deadlines={displayDeadlines}
+                onOpen={() =>
+                  document
+                    .getElementById("deadline-agenda")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+              />
+              <p className="help">
+                Vencido: fecha pasada · Crítico: hasta 24 h · Próximo: entre 24
+                y 48 h · Programado: más de 48 h. El tiempo restante se
+                recalcula mientras el panel está abierto.
+              </p>
+              <p className="notice">
+                {mailSettings?.deadline_reminders_active
+                  ? "Recordatorios por Gmail activos: al responsable del caso a 48 h, 24 h y al vencer. El servidor debe permanecer encendido; se comprueba cada minuto."
+                  : "Los recordatorios por Gmail no están activos. Consulta a Gerencia para revisar su configuración. Los avisos del panel siguen disponibles."}
+              </p>
               <section className="card table-card">
-                <div className="table-heading">
+                <div className="table-heading" id="deadline-agenda">
                   <h2>Agenda procesal</h2>
                   <span>Audiencias y escritos</span>
                 </div>
@@ -1117,19 +1210,24 @@ function App() {
                           "Cliente",
                           "Actuación procesal",
                           "Fecha límite · Lima",
+                          "Tiempo restante",
                           "Alerta",
+                          "Recordatorio Gmail",
                         ].map((t) => (
                           <th key={t}>{t}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {deadlines.map((d) => (
+                      {displayDeadlines.map((d) => (
                         <tr key={d.id}>
                           <td>#{d.case_id}</td>
                           <td>{d.client_name}</td>
                           <td>{d.title}</td>
                           <td>{date(d.due_at)}</td>
+                          <td className={`deadline-tone ${d.tone}`}>
+                            {d.remaining}
+                          </td>
                           <td>
                             <span
                               className={
@@ -1142,6 +1240,38 @@ function App() {
                               }
                             >
                               {d.urgency}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="help">
+                              {d.reminder_status
+                                ? {
+                                    accepted:
+                                      "Aceptado por Gmail; entrega no confirmada",
+                                    pending: "Envío pendiente de confirmación",
+                                    failed:
+                                      "Autenticación rechazada; revisar configuración",
+                                    uncertain:
+                                      "Resultado sin confirmar; revisar buzón",
+                                  }[d.reminder_status]
+                                : d.case_status === "Atención inicial cerrada"
+                                  ? "Atención cerrada"
+                                  : !d.lawyer_id
+                                    ? "Sin abogado responsable"
+                                    : !["gerencia", "abogado"].includes(
+                                          d.responsible_role,
+                                        )
+                                      ? "El responsable debe tener rol de abogado o Gerencia"
+                                      : mailSettings?.deadline_reminders_active
+                                        ? "Pendiente de su horario de revisión"
+                                        : "No activo"}
+                              {d.reminder_stage &&
+                                ` · ${d.reminder_stage === "expired" ? "Vencimiento" : d.reminder_stage}`}
+                              {d.responsible_email && (
+                                <small className="reminder-recipient">
+                                  Para: {d.responsible_email}
+                                </small>
+                              )}
                             </span>
                           </td>
                         </tr>

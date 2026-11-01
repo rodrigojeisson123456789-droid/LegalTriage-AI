@@ -69,6 +69,7 @@ try {
     env: {
       ...process.env,
       PORT: "3002",
+      MAIL_DEADLINE_REMINDERS: "false",
       GEMINI_API_KEY: "mock-not-real",
       MAIL_MODE: "preview",
     },

@@ -48,6 +48,7 @@ try {
     env: {
       ...process.env,
       PORT: "3002",
+      MAIL_DEADLINE_REMINDERS: "false",
       GEMINI_API_KEY: "",
       MAIL_MODE: "preview",
     },

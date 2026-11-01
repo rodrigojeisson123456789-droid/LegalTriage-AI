@@ -23,7 +23,30 @@ El prompt clasifica en Civil, Corporativo, Familia, Bancario, Laboral, Penal o I
 
 ## Plazos
 
-El abogado selecciona un caso e ingresa título y fecha/hora de Lima (UTC−5). La API guarda UTC y recalcula la urgencia al consultar: vencido si ya pasó, crítico hasta 24 h inclusive, próximo hasta 48 h inclusive y programado después. El cliente actualiza cada minuto. Las alertas son visuales, no se envían correos ni notificaciones fuera del panel. No se calculan días hábiles ni plazos legales automáticamente.
+El abogado selecciona un caso e ingresa título y fecha/hora de Lima (UTC−5). La API guarda UTC y recalcula la urgencia al consultar: vencido si ya pasó, crítico hasta 24 h inclusive, próximo hasta 48 h inclusive y programado después. El panel consulta datos nuevos cada 10 segundos mientras está visible y recalcula el tiempo restante cada 30 segundos. Los vencidos y los próximos a vencer se destacan también fuera de la agenda; las atenciones cerradas quedan como histórico y no activan recordatorios. Los avisos por Gmail son opcionales, según la configuración descrita abajo. No se calculan días hábiles ni plazos legales automáticamente.
+
+### Actualización de consultas sin cerrar sesión
+
+El equipo consulta casos, plazos, usuarios y sesión al entrar, cambiar de sección, volver a la pestaña, recuperar Internet y cada 10 segundos mientras la página está visible. Las pestañas del mismo origen notifican una consulta nueva o aclaración respondida mediante `BroadcastChannel`, sin transmitir datos personales ni tokens; si el canal está bloqueado, continúa el sondeo. Cada respuesta se verifica contra la sesión y la generación de carga vigente para que una respuesta anterior no sobrescriba datos nuevos. Los GET evitan caché. **Actualizar ahora** permite consultar manualmente y muestra la hora de la última actualización correcta; un error conserva los datos y avisa de que pueden estar desactualizados. Los abogados siguen viendo únicamente sus casos asignados: el refresco no amplía permisos ni elimina filtros de búsqueda/estado.
+
+### Recordatorios automáticos de plazos por Gmail
+
+En `server/.env`, conservar las credenciales de Gmail existentes y añadir:
+
+```env
+MAIL_MODE=gmail
+MAIL_DEADLINE_REMINDERS=true
+```
+
+Tras actualizar con la aplicación detenida, ejecutar `npm run db:init` (crea `deadline_reminders` sin borrar datos) y `npm run dev`. La nueva opción está desactivada por defecto; `MAIL_AUTO_RESPONSE` controla otra función y no activa estos recordatorios. Gmail debe estar configurado con `SMTP_USER`, `SMTP_APP_PASSWORD` y `PUBLIC_APP_URL` válidos. No es necesario volver a crear la contraseña de aplicación. El destino es **el correo de la cuenta del abogado/Gerencia responsable del caso**, no el correo del cliente ni necesariamente el de SMTP_USER; Control de plazos muestra el destinatario. Debe ser una dirección real.
+
+El servidor revisa al iniciar y aproximadamente cada minuto, en lotes de hasta 20 avisos: una etapa entre 24 y 48 horas, otra hasta 24 horas y otra al vencer. Si se inicia tarde, envía solo la etapa vigente, sin acumular las anteriores. Excluye casos sin responsable, responsables con rol Soporte y atenciones iniciales cerradas; los avisos visuales de casos activos siguen funcionando. Los avisos usan la fecha registrada por el equipo, no calculan reglas jurídicas, días hábiles ni fechas desde documentos. El correo contiene número de caso, actuación, fecha en Lima y acceso autenticado al panel; no adjunta documentos, respuestas, notas, DNI ni enlaces de acceso público.
+
+**La API debe permanecer encendida y con Internet**; Docker/MySQL encendido por sí solo no ejecuta los recordatorios. Si está apagada no hay envío puntual: al volver a iniciar se procesa la etapa que corresponda. El panel debe abrirse para ver avisos visuales, pero Gmail no depende de que el navegador esté abierto. Esta actualización no configura un servicio de inicio automático del sistema.
+
+Cada intento se reserva en MySQL de forma única por plazo, responsable y etapa antes de contactar Gmail; una reasignación permite avisar al nuevo responsable sin repetir al anterior. Los reinicios y procesos concurrentes no vuelven a enviar la misma reserva. El historial registra solicitud y resultado sin direcciones ni texto privado; la agenda muestra el último estado del responsable actual. **Aceptado por Gmail no confirma entrega ni lectura**. Un fallo EAUTH queda rechazado; un timeout queda incierto; una interrupción antes de registrar el resultado puede dejarlo pendiente. Para evitar duplicados no se reintentan automáticamente reservas fallidas, inciertas o pendientes de esa misma etapa: revisar buzón, configuración y registro antes de decidir un reenvío fuera de esta función. Puede haber otro aviso al entrar en la siguiente etapa. No se promete entrega exactamente una vez.
+
+Pruebas: `npm test`, `npm run build` y, desde `server/`, `node scripts/deadline-reminders-smoke.js` con MySQL de prueba sin otros plazos elegibles. El SMTP se simula: cubre límites 24/48 h, etapas, privacidad, destinatario, concurrencia, persistencia entre procesos, reasignación, EAUTH, timeout y fallo de persistencia sin duplicados. `REPORT_DIR=/tmp/legaltriage-live-deadlines node scripts/acceptance-browser.js` verifica consultas nuevas sin otro login, sondeo sin mensajes entre pestañas, estados/tiempo restante y cambio a vencido con reloj controlado. No valida entrega real de Gmail.
 
 ## Validación
 
@@ -127,7 +150,7 @@ La respuesta admite texto (hasta 10.000 caracteres), requiere consentimiento, se
 
 **En desarrollo**, un enlace con `localhost` o `127.0.0.1` funciona solo en la laptop donde corre el sistema. Para un cliente externo se requiere desplegar frontend y API bajo una dirección pública HTTPS; esta actualización no publica el sitio.
 
-Prueba local: crear una solicitud, copiar el enlace, abrirlo en una ventana privada y responder. Volver al panel y abrir el historial; el caso debe volver a evaluación (el panel se refresca cada minuto o al cerrar Aclaraciones). Los enlaces respondidos, vencidos, cancelados o reemplazados no permiten una respuesta nueva.
+Prueba local: crear una solicitud, copiar el enlace, abrirlo en una ventana privada y responder. Volver al panel y abrir el historial; el caso debe volver a evaluación (el panel se refresca cada 10 segundos mientras está visible, al volver a la pestaña o al cerrar Aclaraciones). Los enlaces respondidos, vencidos, cancelados o reemplazados no permiten una respuesta nueva.
 
 Endpoints: públicos `POST /api/clarifications/access` y `POST /api/clarifications/answer` (token por cuerpo); privados `GET/POST /api/cases/:id/clarifications` y `DELETE /api/cases/:id/clarifications/:requestId`. `PATCH /api/cases/:id` admite corrección manual de especialidad.
 

@@ -1,7 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mailConfig, mailMessage, safeMailError } from "../src/mail.js";
-const keys = ["MAIL_MODE", "SMTP_USER", "SMTP_APP_PASSWORD", "PUBLIC_APP_URL"];
+const keys = [
+  "MAIL_MODE",
+  "SMTP_USER",
+  "SMTP_APP_PASSWORD",
+  "PUBLIC_APP_URL",
+  "MAIL_DEADLINE_REMINDERS",
+  "MAIL_AUTO_RESPONSE",
+];
 function environment(values, fn) {
   const old = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
   for (const k of keys) delete process.env[k];
@@ -20,6 +27,7 @@ test("correo inicia en preview, no expone secretos en el mensaje y valida origen
     const config = mailConfig();
     assert.equal(config.mode, "preview");
     assert.equal(config.local, true);
+    assert.equal(config.deadlineReminders, false);
     const token = "a".repeat(64);
     const message = mailMessage("clarification", token, config);
     assert.match(message.text, /#aclaracion=/);
@@ -41,11 +49,13 @@ test("correo exige HTTPS externo y rechaza rutas/credenciales de origen", () => 
       MAIL_MODE: "gmail",
       SMTP_USER: "test@example.com",
       SMTP_APP_PASSWORD: "abcd efgh ijkl mnop",
+      MAIL_DEADLINE_REMINDERS: "true",
     },
     () => {
       const c = mailConfig();
       assert.equal(c.local, false);
       assert.equal(c.configured, true);
+      assert.equal(c.deadlineReminders, true);
       assert.equal(c.password, "abcdefghijklmnop");
       const message = mailMessage("response", "b".repeat(64), c);
       assert.match(message.text, /https:\/\/legal.example.com\/#respuesta=/);
@@ -54,6 +64,9 @@ test("correo exige HTTPS externo y rechaza rutas/credenciales de origen", () => 
         /abcdefghijklmnop|test@example.com|PRUEBA LOCAL/,
       );
     },
+  );
+  environment({ MAIL_DEADLINE_REMINDERS: "invalid" }, () =>
+    assert.throws(mailConfig),
   );
 });
 test("errores SMTP muestran diagnósticos conocidos sin revelar respuestas ni credenciales", () => {

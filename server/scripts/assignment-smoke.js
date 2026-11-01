@@ -105,7 +105,13 @@ try {
       "src/index.js",
     ],
     {
-      env: { ...process.env, PORT: "3002", GEMINI_API_KEY: "test-only" },
+      env: {
+        ...process.env,
+        PORT: "3002",
+        MAIL_DEADLINE_REMINDERS: "false",
+        MAIL_MODE: "preview",
+        GEMINI_API_KEY: "test-only",
+      },
       stdio: ["ignore", "pipe", "pipe"],
     },
   );

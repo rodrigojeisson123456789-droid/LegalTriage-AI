@@ -27,7 +27,13 @@ async function login(email, password) {
 }
 try {
   child = spawn(process.execPath, ["src/index.js"], {
-    env: { ...process.env, PORT: "3002", GEMINI_API_KEY: "" },
+    env: {
+      ...process.env,
+      PORT: "3002",
+      MAIL_DEADLINE_REMINDERS: "false",
+      MAIL_MODE: "preview",
+      GEMINI_API_KEY: "",
+    },
     stdio: ["ignore", "pipe", "pipe"],
   });
   let ready = false;

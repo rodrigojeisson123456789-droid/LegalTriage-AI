@@ -30,6 +30,9 @@ export function mailConfig() {
   const autoValue = process.env.MAIL_AUTO_RESPONSE || "true";
   if (!["true", "false"].includes(autoValue))
     throw new MailConfigError("MAIL_AUTO_RESPONSE debe ser true o false.");
+  const reminderValue = process.env.MAIL_DEADLINE_REMINDERS || "false";
+  if (!["true", "false"].includes(reminderValue))
+    throw new MailConfigError("MAIL_DEADLINE_REMINDERS debe ser true o false.");
   return {
     mode,
     origin: url.origin,
@@ -38,6 +41,7 @@ export function mailConfig() {
     user,
     password,
     autoResponse: autoValue === "true",
+    deadlineReminders: reminderValue === "true",
   };
 }
 export function gmailTransport(config = mailConfig()) {

@@ -43,6 +43,10 @@ function description(event) {
       return "Se revocaron los enlaces de respuesta.";
     case "deadline.created":
       return `Plazo #${d.deadline_id} registrado para ${formatDate(d.due_at)}.`;
+    case "deadline.reminder_requested":
+      return `Recordatorio del plazo #${d.deadline_id} solicitado (${d.stage === "expired" ? "vencido" : d.stage}).`;
+    case "deadline.reminder_result":
+      return `Recordatorio #${d.reminder_id}: ${{ accepted: "aceptado por Gmail; entrega no confirmada", failed: "autenticación rechazada", uncertain: "resultado sin confirmar; revisar buzón" }[d.status]}.`;
     case "mail.requested":
       return `Envío de correo solicitado (${d.kind === "clarification" ? "aclaración" : "respuesta aprobada"}), intento #${d.notification_id}.`;
     case "mail.result":

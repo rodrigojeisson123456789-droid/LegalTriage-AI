@@ -37,6 +37,7 @@ import {
   clarificationFreshness,
 } from "./analysis-context.js";
 import { db } from "./db.js";
+import { startDeadlineReminders } from "./deadline-reminders.js";
 import {
   caseSchema,
   deadlineSchema,
@@ -51,6 +52,7 @@ app.use(helmet());
 app.use(express.json({ limit: "96kb" }));
 app.use(cookieParser());
 app.use("/api", (req, res, next) => {
+  res.set("Cache-Control", "no-store");
   if (
     !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
     req.get("sec-fetch-site") === "cross-site"
@@ -503,7 +505,10 @@ app.patch("/api/cases/:id", async (req, res) => {
 });
 app.get("/api/deadlines", async (req, res) => {
   const [rows] = await db.execute(
-    "SELECT d.*,c.name AS client_name FROM deadlines d JOIN cases c ON c.id=d.case_id " +
+    "SELECT d.*,c.name AS client_name,c.status AS case_status,c.lawyer_id,u.email AS responsible_email,u.role AS responsible_role," +
+      "(SELECT r.status FROM deadline_reminders r WHERE r.deadline_id=d.id AND r.recipient_id=c.lawyer_id ORDER BY r.id DESC LIMIT 1) AS reminder_status," +
+      "(SELECT r.stage FROM deadline_reminders r WHERE r.deadline_id=d.id AND r.recipient_id=c.lawyer_id ORDER BY r.id DESC LIMIT 1) AS reminder_stage " +
+      "FROM deadlines d JOIN cases c ON c.id=d.case_id LEFT JOIN users u ON u.id=c.lawyer_id " +
       (req.user.role === "abogado" ? "WHERE c.lawyer_id=? " : "") +
       "ORDER BY d.due_at LIMIT 500",
     req.user.role === "abogado" ? [req.user.id] : [],
@@ -571,6 +576,8 @@ app.use((err, req, res, next) => {
     .status(500)
     .json({ error: "No se pudo completar la operación. Intenta nuevamente." });
 });
-app.listen(Number(process.env.PORT || 3001), "0.0.0.0", () =>
-  console.log("LegalTriage API iniciada"),
-);
+const server = app.listen(Number(process.env.PORT || 3001), "0.0.0.0", () => {
+  console.log("LegalTriage API iniciada");
+  const stopReminders = startDeadlineReminders();
+  server.on("close", stopReminders);
+});

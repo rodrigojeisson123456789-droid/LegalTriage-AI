@@ -11,7 +11,13 @@ const base = "http://127.0.0.1:3002/api";
 const email = `clarification-${randomBytes(8).toString("hex")}@example.com`,
   password = randomBytes(24).toString("hex");
 const child = spawn(process.execPath, ["src/index.js"], {
-  env: { ...process.env, PORT: "3002", GEMINI_API_KEY: "" },
+  env: {
+    ...process.env,
+    PORT: "3002",
+    MAIL_DEADLINE_REMINDERS: "false",
+    MAIL_MODE: "preview",
+    GEMINI_API_KEY: "",
+  },
   stdio: ["ignore", "pipe", "pipe"],
 });
 let caseId, userId, cookie;

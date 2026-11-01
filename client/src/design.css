@@ -9,6 +9,101 @@
   background: var(--paper);
   color: var(--ink);
 }
+.workspace-sync {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.workspace-sync > span {
+  flex: 1 1 230px;
+}
+.workspace-sync button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.deadline-reminder {
+  border: 1px solid #d9bd7a;
+  background: #fff8e8;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 26px;
+}
+.deadline-reminder.has-expired {
+  border-color: #e6b4aa;
+  background: #fff5f1;
+}
+.reminder-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.reminder-title h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.deadline-reminder p {
+  margin: 12px 0;
+  font-size: 13px;
+}
+.deadline-reminder ul {
+  padding: 0;
+  margin: 0 0 14px;
+  list-style: none;
+}
+.deadline-reminder li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 7px 20px;
+  padding: 9px 0;
+  border-bottom: 1px solid #ded2bc;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.deadline-reminder li > span {
+  flex: 1 1 220px;
+}
+.shell-team .deadline-reminder .text-button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+.shell-team main > .title-row > .primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
+  min-height: 44px;
+  height: auto;
+  padding: 12px 18px;
+  background: linear-gradient(180deg, #ebc06c, #d4a14b);
+  border-color: #a87b33;
+  color: #24221d;
+}
+.deadline-tone.expired {
+  color: #9b3028;
+  font-weight: 650;
+}
+.deadline-tone.critical {
+  color: #a14420;
+  font-weight: 650;
+}
+.deadline-tone.soon {
+  color: #82590e;
+  font-weight: 650;
+}
+.reminder-recipient {
+  display: block;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
 .analysis-context {
   margin: 20px 0;
   padding: 18px;
