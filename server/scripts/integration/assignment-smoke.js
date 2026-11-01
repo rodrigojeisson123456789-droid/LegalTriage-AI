@@ -7,7 +7,7 @@ import { randomBytes } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import bcrypt from "bcryptjs";
 import { PDFDocument } from "pdf-lib";
-import { db } from "../src/db.js";
+import { db } from "../../src/db.js";
 const area = process.env.SMOKE_SPECIALTY || "Laboral";
 assert.ok(
   ["Laboral", "Penal"].includes(area),

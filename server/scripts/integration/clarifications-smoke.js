@@ -5,8 +5,8 @@ import { randomBytes } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import assert from "node:assert/strict";
 import bcrypt from "bcryptjs";
-import { db } from "../src/db.js";
-import { withClarificationContext } from "../src/clarifications.js";
+import { db } from "../../src/db.js";
+import { withClarificationContext } from "../../src/clarifications.js";
 const base = "http://127.0.0.1:3002/api";
 const email = `clarification-${randomBytes(8).toString("hex")}@example.com`,
   password = randomBytes(24).toString("hex");

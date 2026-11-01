@@ -120,4 +120,4 @@ Este texto debe adaptarse a la estructura y terminología aprobadas para la tesi
 - [Informe funcional y evidencias del 25 de octubre](../pruebas/2026-10-25/README.md).
 - [Ficha y protocolo para medir tiempos](../medicion-tiempos/README.md).
 - Código: `server/src/domain.js`, `documents.js`, `assignment.js`, `access.js`, `clarifications.js`, `evaluations.js`, `notifications.js`, `history.js`, `versions.js`, `deadline-reminders.js`, `analysis-context.js` e `index.js`.
-- Pruebas reproducibles: `server/test/` y `server/scripts/*-smoke.js`; condiciones de ejecución descritas en el README.
+- Pruebas reproducibles: `server/test/` y `server/scripts/integration/*-smoke.js`; condiciones de ejecución descritas en el README.

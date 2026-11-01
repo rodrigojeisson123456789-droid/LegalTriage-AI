@@ -11,17 +11,21 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import bcrypt from "bcryptjs";
 import { PDFDocument } from "pdf-lib";
-import { db } from "../src/db.js";
+import { db } from "../../src/db.js";
 const require = createRequire(import.meta.url),
   { chromium } = require("playwright"),
   { createServer } = await import("vite");
 const root = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
-    "../..",
+    "../../..",
   ),
   out =
     process.env.REPORT_DIR ||
-    path.join(root, "documentacion/pruebas/2026-10-25"),
+    path.join(
+      root,
+      "documentacion/pruebas/ejecuciones-locales",
+      new Date().toISOString().replace(/[:.]/g, "-"),
+    ),
   evidence = path.join(out, "evidencias");
 mkdirSync(evidence, { recursive: true });
 const suffix = randomBytes(8).toString("hex"),

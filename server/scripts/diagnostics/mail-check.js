@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { mailConfig, gmailTransport, safeMailError } from "../src/mail.js";
+import { mailConfig, gmailTransport, safeMailError } from "../../src/mail.js";
 let transport;
 try {
   const config = mailConfig();

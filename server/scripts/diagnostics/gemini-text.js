@@ -1,10 +1,10 @@
 // Prueba mínima: no envía documentos, datos de clientes ni esquemas JSON.
 import "dotenv/config";
-import { providerErrorSummary } from "../src/gemini-diagnostics.js";
+import { providerErrorSummary } from "../../src/gemini-diagnostics.js";
 import {
   analysisErrorMessage,
   providerFailureReason,
-} from "../src/documents.js";
+} from "../../src/documents.js";
 async function main() {
   if (!process.env.GEMINI_API_KEY)
     throw new Error(analysisErrorMessage("missing_key"));

@@ -6,9 +6,15 @@ from docx.shared import Inches, Mm, Pt, RGBColor
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 for name in ['DESCRIPCION_FUNCIONAL','REVISION_OBJETIVOS_Y_PENDIENTES']:
- p=Path(__file__).resolve().parent/(name+'.docx')
- subprocess.run(['pandoc', str(p.with_suffix('.md')), '-o', str(p)], check=True)
+ root=Path(__file__).resolve().parents[1]
+ p=root/'entregables'/(name+'.docx')
+ p.parent.mkdir(exist_ok=True)
+ subprocess.run(['pandoc', str(root/(name+'.md')), '-o', str(p)], check=True)
  d=Document(p)
+ # Los enlaces locales se resuelven desde entregables/, un nivel más abajo.
+ for rel in d.part.rels.values():
+  if rel.is_external and rel.reltype.endswith('/hyperlink') and not rel.target_ref.startswith(('https:', 'http:', 'mailto:', '#', '/')):
+   rel._target='../'+rel.target_ref
  for sec in d.sections:
   sec.page_width=Mm(210);sec.page_height=Mm(297)
   sec.left_margin=Inches(.7);sec.right_margin=Inches(.7)

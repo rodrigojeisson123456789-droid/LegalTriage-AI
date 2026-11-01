@@ -8,12 +8,10 @@
     "test": "node --test",
     "db:init": "node src/setup.js",
     "user:create": "node src/create-user.js",
-    "gemini:check": "node scripts/gemini-check.js",
-    "gemini:models": "node scripts/gemini-models.js",
-    "gemini:text": "node scripts/gemini-text.js",
-    "gemini:curl": "node scripts/gemini-curl.js",
-    "gemini:interactions": "node scripts/gemini-interactions.js",
-    "mail:check": "node scripts/mail-check.js"
+    "gemini:check": "node scripts/diagnostics/gemini-check.js",
+    "gemini:models": "node scripts/diagnostics/gemini-models.js",
+    "gemini:text": "node scripts/diagnostics/gemini-text.js",
+    "mail:check": "node scripts/diagnostics/mail-check.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

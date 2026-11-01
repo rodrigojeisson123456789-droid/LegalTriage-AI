@@ -7,7 +7,7 @@ import { randomBytes } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import bcrypt from "bcryptjs";
 import { PDFDocument } from "pdf-lib";
-import { db } from "../src/db.js";
+import { db } from "../../src/db.js";
 
 const base = "http://127.0.0.1:3002/api";
 const email = `analysis-context-${randomBytes(8).toString("hex")}@example.com`;

@@ -4,8 +4,8 @@ import assert from "node:assert/strict";
 import { randomBytes } from "node:crypto";
 import { spawn } from "node:child_process";
 import { setTimeout as delay } from "node:timers/promises";
-import { db } from "../src/db.js";
-import { runDeadlineReminders } from "../src/deadline-reminders.js";
+import { db } from "../../src/db.js";
+import { runDeadlineReminders } from "../../src/deadline-reminders.js";
 
 const suffix = randomBytes(8).toString("hex"),
   users = [],

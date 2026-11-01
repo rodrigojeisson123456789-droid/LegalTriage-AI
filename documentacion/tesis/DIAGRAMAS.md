@@ -34,7 +34,7 @@ El diagrama resume el flujo; las restricciones de aprobación, plazos y permisos
 Para generar las figuras, con Python 3 y Graphviz instalados:
 
 ```sh
-python documentacion/tesis/generar_diagramas.py
+python documentacion/tesis/herramientas/generar_diagramas.py
 ```
 
 El script no se conecta a MySQL. Si cambia el esquema, actualizar primero los metadatos y la descripción de campos después de contrastarlos con el código. No ejecutar las figuras antiguas del documento como si fueran una observación del proceso real; deben revisarse sus etiquetas y fuentes antes de la entrega académica.

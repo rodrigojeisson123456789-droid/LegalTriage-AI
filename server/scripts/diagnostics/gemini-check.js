@@ -1,7 +1,7 @@
 // No usa documentos del cliente ni imprime la clave o respuestas sin filtrar.
 import "dotenv/config";
 import { PDFDocument } from "pdf-lib";
-import { analyzeDocument, analysisErrorMessage } from "../src/documents.js";
+import { analyzeDocument, analysisErrorMessage } from "../../src/documents.js";
 function reportAttempt({ attempt, status, elapsedMs, error, retryInMs }) {
   console.log(
     `Intento ${attempt}/3. HTTP: ${status}. Tiempo acumulado: ${Math.round(elapsedMs / 1000)} s.`,

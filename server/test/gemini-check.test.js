@@ -24,7 +24,7 @@ test("gemini:check informa intentos y error filtrado; valida PDF tras recuperar 
     [
       "--import",
       "data:text/javascript," + encodeURIComponent(mock),
-      "scripts/gemini-check.js",
+      "scripts/diagnostics/gemini-check.js",
     ],
     {
       cwd: new URL("../", import.meta.url),

@@ -7,7 +7,7 @@ import json
 import subprocess
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "diagramas"
 schema = json.loads((OUT / "esquema-relaciones.json").read_text(encoding="utf-8"))
 

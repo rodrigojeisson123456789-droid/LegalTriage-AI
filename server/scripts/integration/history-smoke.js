@@ -6,8 +6,8 @@ import { setTimeout as delay } from "node:timers/promises";
 import assert from "node:assert/strict";
 import bcrypt from "bcryptjs";
 import { PDFDocument } from "pdf-lib";
-import { db } from "../src/db.js";
-import { recordEvent } from "../src/history.js";
+import { db } from "../../src/db.js";
+import { recordEvent } from "../../src/history.js";
 const base = "http://127.0.0.1:3002/api",
   suffix = randomBytes(8).toString("hex"),
   password = randomBytes(24).toString("hex"),

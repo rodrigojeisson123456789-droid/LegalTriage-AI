@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import assert from "node:assert/strict";
 import bcrypt from "bcryptjs";
-import { db } from "../src/db.js";
+import { db } from "../../src/db.js";
 const suffix = randomBytes(8).toString("hex"),
   password = randomBytes(24).toString("hex"),
   email = `auto-${suffix}@example.com`,

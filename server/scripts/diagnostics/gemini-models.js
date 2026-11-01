@@ -1,6 +1,6 @@
 // Lista modelos accesibles sin imprimir la clave ni cuerpos de error de Google.
 import 'dotenv/config';
-import {analysisErrorMessage,providerFailureReason} from '../src/documents.js';
+import {analysisErrorMessage,providerFailureReason} from '../../src/documents.js';
 async function main(){
   if(!process.env.GEMINI_API_KEY)throw new Error(analysisErrorMessage('missing_key'));
   let token;const names=new Set();const seen=new Set();
