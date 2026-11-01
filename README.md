@@ -85,7 +85,7 @@ Pruebas: `npm test` incluye validación documental y Gemini con respuestas simul
 
 ### Diagnosticar Gemini sin compartir credenciales
 
-Desde la raíz ejecuta `npm run gemini:check`. Lee `server/.env` y envía exclusivamente un PDF ficticio generado en memoria, no archivos de clientes. Imprime un diagnóstico conocido (clave rechazada, permisos, API deshabilitada, cuota 429, modelo 404, solicitud rechazada, conexión, timeout o respuesta inválida) sin mostrar la clave ni el cuerpo de error de Google. Puede consumir cuota de Gemini. Un fallo termina con código 1; conserva las comprobaciones de TLS.
+Desde la raíz ejecuta `npm run gemini:check`. Lee `server/.env` y envía exclusivamente un PDF ficticio generado en memoria, no archivos de clientes. Imprime el HTTP y el tiempo acumulado de cada intento, y ante un rechazo muestra únicamente código, estado y mensaje filtrado mediante el mismo saneamiento de `gemini:text` (oculta claves y URLs; máximo 500 caracteres). No imprime el cuerpo completo, los documentos ni metadatos del proveedor. Finaliza con un diagnóstico conocido (clave rechazada, permisos, API deshabilitada, cuota 429, modelo 404, solicitud rechazada, conexión, timeout o respuesta inválida). Puede consumir cuota de Gemini. Un fallo termina con código 1; conserva las comprobaciones de TLS.
 
 Al reintentar un documento, el panel actualiza el motivo del último fallo. Un análisis válido anterior se conserva aunque un intento posterior falle. Cambiar `server/.env` exige reiniciar el backend; no es necesario volver a subir el documento. Un mensaje de cuota no implica por sí solo que debas pagar: revisa los límites y las opciones disponibles en el proyecto antes de decidir.
 
@@ -101,7 +101,9 @@ Para una única prueba de latencia extendida en PowerShell: `$env:GEMINI_DIAGNOS
 
 ### Tiempo de espera del análisis
 
-El análisis PDF y la clasificación de consultas esperan hasta **120 segundos** por respuesta de Gemini. El diagnóstico `npm run gemini:check` utiliza exactamente ese mismo límite e informa su duración. Se amplió a partir de una generación de texto real que tardó 36 segundos; esto no garantiza que el PDF responda dentro de dos minutos. Si expira, se conserva el documento y se permite reintentar. No modifica MySQL ni crea plazos automáticos. La prueba mínima `gemini:text` mantiene su límite independiente de 30 segundos salvo ajuste diagnóstico explícito.
+El análisis PDF y la clasificación de consultas tienen un límite **total de 120 segundos**, incluyendo lectura de respuestas, esperas y reintentos. Solo ante HTTP 500, 502, 503 o 504 explícitos se hacen hasta tres intentos del mismo modelo y contenido, con espera creciente (aproximadamente 1 y 2 segundos, con una pequeña variación aleatoria). Se respeta `Retry-After` si pide esperar más; si esa espera agotaría el tiempo restante, se devuelve el último error sin repetir. No se repiten 400/401/403/404/429, bloqueos, contenido inválido, errores de red ni timeouts. No se cambia de modelo automáticamente. Cada intento puede consumir cuota; estos reintentos pueden recuperar fallos intermitentes, pero no garantizan disponibilidad cuando el proveedor sigue saturado.
+
+El diagnóstico `npm run gemini:check` usa el mismo transporte y límite que la aplicación e informa su duración. Si expira, se conserva el documento y se permite reintentar; un fallo posterior conserva el análisis anterior válido. No modifica el esquema de MySQL ni crea plazos automáticos. La prueba mínima `gemini:text` sigue siendo una sola petición con su límite independiente de 30 segundos salvo ajuste diagnóstico explícito; que funcione no valida PDF ni salida estructurada.
 
 ## Especialidad Laboral y circuito de aclaraciones
 

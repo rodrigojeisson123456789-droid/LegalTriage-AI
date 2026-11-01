@@ -2,19 +2,35 @@
 import "dotenv/config";
 import { PDFDocument } from "pdf-lib";
 import { analyzeDocument, analysisErrorMessage } from "../src/documents.js";
+function reportAttempt({ attempt, status, elapsedMs, error, retryInMs }) {
+  console.log(
+    `Intento ${attempt}/3. HTTP: ${status}. Tiempo acumulado: ${Math.round(elapsedMs / 1000)} s.`,
+  );
+  if (error)
+    console.error(`Detalle recibido (filtrado): ${JSON.stringify(error)}`);
+  if (retryInMs !== null)
+    console.log(
+      `Reintentando el mismo modelo en ${(retryInMs / 1000).toFixed(1)} s…`,
+    );
+}
 const pdf = await PDFDocument.create();
 pdf
   .addPage()
   .drawText("Contrato de arrendamiento. Fecha de firma: 10 enero 2026.");
-const model=process.env.GEMINI_MODEL||'gemini-2.5-flash';
-if(/^[A-Za-z0-9._-]{1,120}$/.test(model))console.log(`Modelo efectivo: ${model}`);
-console.log("Comprobando Gemini con un PDF ficticio de una página (hasta 2 minutos)…");
-const started=Date.now();
+const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+if (/^[A-Za-z0-9._-]{1,120}$/.test(model))
+  console.log(`Modelo efectivo: ${model}`);
+console.log(
+  "Comprobando Gemini con un PDF ficticio de una página (hasta 2 minutos)…",
+);
+const started = Date.now();
 const result = await analyzeDocument(
   { buffer: Buffer.from(await pdf.save()), mime: "application/pdf", pages: 1 },
   "Clasifica y resume este contrato ficticio para comprobar la conexión.",
+  fetch,
+  { onAttempt: reportAttempt },
 );
-console.log(`Duración total: ${Math.round((Date.now()-started)/1000)} s.`);
+console.log(`Duración total: ${Math.round((Date.now() - started) / 1000)} s.`);
 if (result.status === "analyzed")
   console.log(
     "Conexión y análisis correctos. Ya puedes reintentar el documento guardado desde el panel.",
