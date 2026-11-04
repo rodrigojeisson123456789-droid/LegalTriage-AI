@@ -3,7 +3,7 @@ import { z } from "zod";
 export const MAX_ANALYSIS_CLARIFICATIONS = 20;
 export const analysisContextSchema = z
   .object({
-    source: z.enum(["initial", "reanalyze"]),
+    source: z.enum(["initial", "review", "reanalyze"]),
     total_answered: z.number().int().nonnegative(),
     clarifications: z
       .array(

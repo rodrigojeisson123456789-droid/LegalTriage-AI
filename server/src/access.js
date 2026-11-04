@@ -22,7 +22,7 @@ export function routeAllowed(role, method, path, body = {}) {
   if (/^\/documents\/\d+\/(download|analyze)$/.test(path))
     return (
       (method === "GET" && path.endsWith("/download")) ||
-      (method === "POST" && path.endsWith("/analyze"))
+      (role === "abogado" && method === "POST" && path.endsWith("/analyze"))
     );
   if (/^\/cases\/\d+\/history(?:\/\d+\/version)?$/.test(path))
     return method === "GET";

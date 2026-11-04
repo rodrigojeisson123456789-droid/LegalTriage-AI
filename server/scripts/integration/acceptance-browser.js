@@ -64,7 +64,7 @@ const analysis = {
     "Confirma la fecha de ingreso y si recibiste una carta de despido.",
   ],
 };
-const mock = `import nodemailer from ${JSON.stringify(import.meta.resolve("nodemailer"))};nodemailer.createTransport=()=>({sendMail:async m=>{if(!m.to.endsWith('@example.com')||m.text.includes('RESERVADO'))throw new Error('Mensaje de prueba inválido');return {accepted:[m.to]};},close(){}});let n=0;globalThis.fetch=async(url,options)=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Destino externo inesperado');n++;const context=JSON.parse(options.body).contents[0].parts[0].text;if(n>1&&!context.includes('DATOS FICTICIOS: ingresé en enero de 2023 y no recibí carta de despido.'))throw new Error('Faltan aclaraciones en la solicitud real');return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({...${JSON.stringify(analysis)},summary:n===1?${JSON.stringify(analysis.summary)}:'Consulta laboral ficticia con aclaraciones incorporadas. Segunda versión de prueba.'})}]}}]})}};await import('./src/index.js');`;
+const mock = `import nodemailer from ${JSON.stringify(import.meta.resolve("nodemailer"))};nodemailer.createTransport=()=>({sendMail:async m=>{if(!m.to.endsWith('@example.com')||m.text.includes('RESERVADO'))throw new Error('Mensaje de prueba inválido');return {accepted:[m.to]};},close(){}});let n=0;globalThis.fetch=async(url,options)=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Destino externo inesperado');const payload=JSON.parse(options.body);if(payload.generationConfig.responseSchema.type==='STRING'){if(payload.contents[0].parts.some(p=>p.inlineData))throw new Error('Archivo enviado antes de revisión');return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify('Laboral')}]}}]})}};n++;const context=payload.contents[0].parts[0].text;if(n>1&&!context.includes('DATOS FICTICIOS: ingresé en enero de 2023 y no recibí carta de despido.'))throw new Error('Faltan aclaraciones en la solicitud real');return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({...${JSON.stringify(analysis)},summary:n===1?${JSON.stringify(analysis.summary)}:'Consulta laboral ficticia con aclaraciones incorporadas. Segunda versión de prueba.'})}]}}]})}};await import('./src/index.js');`;
 async function seed(name, role) {
   const email = `aceptacion-${role}-${users.length}-${suffix}@example.com`;
   const [u] = await db.execute(
@@ -390,12 +390,17 @@ try {
     "Respuesta Gemini simulada Laboral; algoritmo real asignó la abogada disponible.",
   );
   await row.getByRole("button", { name: "Ver documentos y análisis" }).click();
+  await p.getByText(/Pendiente de revisión por el abogado/).waitFor();
+  assert.equal(await p.getByText(analysis.summary, { exact: true }).count(), 0);
+  await p
+    .getByRole("button", { name: "Analizar con Gemini", exact: true })
+    .click();
   await p.getByText(analysis.summary, { exact: true }).waitFor();
   await screenshot(p, "03-analisis-inicial.png");
   await p.getByRole("button", { name: "Cerrar documentos" }).click();
   passed(
     "UI-03",
-    "Visualización del análisis documental",
+    "Análisis documental iniciado por el abogado",
     "03-analisis-inicial.png",
     "Resumen, hallazgos con página, fechas y advertencias mostrados; contenido Gemini simulado.",
   );
@@ -655,6 +660,23 @@ try {
       .count(),
     0,
   );
+  await supportRow
+    .getByRole("button", { name: "Ver documentos y análisis" })
+    .click();
+  assert.equal(
+    await s
+      .getByRole("button", { name: "Volver a analizar", exact: true })
+      .count(),
+    0,
+  );
+  assert.equal(
+    await s
+      .getByRole("button", { name: "Analizar con Gemini", exact: true })
+      .count(),
+    0,
+  );
+  await s.getByRole("link", { name: "Descargar original" }).waitFor();
+  await s.getByRole("button", { name: "Cerrar documentos" }).click();
   await supportRow.getByRole("button", { name: "Historial del caso" }).click();
   const supportDialog = s.getByRole("dialog");
   await supportDialog

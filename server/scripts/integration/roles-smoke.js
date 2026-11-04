@@ -89,6 +89,11 @@ try {
     foreign,
   ]);
   assert.equal((await req(null, "/cases")).status, 401);
+  assert.equal(
+    (await req(support.cookie, `/documents/${docs[0].id}/analyze`, "POST"))
+      .status,
+    403,
+  );
   assert.equal((await req(null, `/cases/${own}`)).status, 401);
   for (const actor of [manager, support, lawyer]) {
     const response = await req(actor.cookie, `/cases/${own}`);

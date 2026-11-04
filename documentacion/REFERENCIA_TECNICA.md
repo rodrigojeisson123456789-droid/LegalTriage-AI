@@ -69,15 +69,17 @@ Dashboard y agenda muestran hasta 500 registros. El historial tiene paginación 
 
 Esta base usa Vite para desarrollo. Para producción, servir `client/dist` con un servidor web y delegar `/api` a Express bajo el mismo origen HTTPS. Configurar `NODE_ENV=production` para cookies Secure, secretos persistentes y MySQL protegido. Las sesiones JWT expiran a las 8 horas; salir elimina la cookie pero no revoca un token copiado. Configurar el proxy y los límites según el despliegue, copias de seguridad y políticas de acceso antes de usar datos reales. Google Fonts es opcional: la interfaz tiene tipografías de respaldo.
 
-## Documentos y análisis con Gemini (primera etapa del flujo)
+## Documentos y análisis solicitado por el profesional
 
 El formulario admite **un documento opcional por consulta**: PDF (hasta 50 páginas), PNG o JPG, de hasta 8 MB. Se verifica el formato por su contenido y se rechazan PDFs dañados o protegidos. El consentimiento incluye el envío del adjunto a Gemini. No adjuntar originales únicos ni información innecesaria.
 
 La consulta y el documento se guardan juntos, en una transacción de MySQL. El archivo se almacena como BLOB en la nueva tabla `documents`, no en una carpeta pública. Las copias de seguridad de MySQL deben incluir esa tabla. Los adjuntos aumentan el tamaño de la base; esta primera versión no incluye cuotas globales, antivirus ni una política automática de eliminación.
 
-Gemini recibe la descripción y el documento por HTTPS y devuelve un JSON validado con: resumen, especialidad sugerida, tipo documental, legibilidad, hallazgos con página, fechas textuales con contexto y página e información faltante. Las referencias deben contrastarse con el original; la IA puede equivocarse. No se calculan ni crean plazos automáticamente. El abogado registra los plazos confirmados en Control de plazos.
+Al registrar una consulta, Gemini recibe únicamente la descripción para sugerir una especialidad y facilitar la asignación. El adjunto queda con `analysis_status=pending`, sin análisis, contexto, fecha ni error. Abrir la ventana de documentos no inicia una llamada a Gemini. El abogado asignado o Gerencia revisa el original y pulsa **Analizar con Gemini** cuando lo considere necesario. Soporte puede descargar el original y leer análisis guardados, pero no iniciar ni repetir el análisis.
 
-Si no hay clave, hay timeout o Gemini devuelve un error, el archivo permanece guardado y el caso aparece como Indeterminado, pendiente de revisión. Desde el panel privado, **Ver documentos y análisis → Analizar con Gemini** permite reintentar sin reenviar la consulta. Un reintento fallido conserva un análisis anterior válido. Solo usuarios autenticados pueden consultar análisis y descargar originales; Gerencia y Soporte acceden a la recepción completa; un Abogado solo a sus casos asignados.
+Solo al solicitarlo el profesional, Gemini recibe la descripción, el documento y las aclaraciones respondidas por HTTPS y devuelve un JSON validado con: resumen, especialidad sugerida, tipo documental, legibilidad, hallazgos con página, fechas textuales con contexto y página e información faltante. Las referencias deben contrastarse con el original; la IA puede equivocarse. No se calculan ni crean plazos automáticamente. El abogado registra los plazos confirmados en Control de plazos.
+
+Si falla la clasificación inicial, el caso queda Indeterminado para revisión; el documento sigue pendiente. Si falla un análisis solicitado por el profesional, el archivo permanece guardado y se muestra el diagnóstico del intento. Desde el panel privado, **Ver documentos y análisis → Analizar con Gemini** permite iniciar o reintentar sin reenviar la consulta. Un reintento fallido conserva un análisis anterior válido. Solo usuarios autenticados pueden consultar análisis y descargar originales; Gerencia y Soporte acceden a la recepción completa; un Abogado solo a sus casos asignados.
 
 ### Actualizar una instalación existente en Windows
 
@@ -91,16 +93,16 @@ npm run db:init
 npm run dev
 ```
 
-`db:init` añade la tabla de documentos sin borrar usuarios, casos ni plazos existentes. No modificar las contraseñas de una base ya inicializada. Si MySQL todavía está arrancando, esperar a `healthy` antes de `db:init`.
+`db:init` añade o actualiza la tabla de documentos, incluido el valor `pending` del ENUM `analysis_status`, sin borrar usuarios, casos, plazos ni análisis existentes. Los análisis automáticos de versiones anteriores permanecen consultables y no se vuelven a generar al abrirlos. No modificar las contraseñas de una base ya inicializada. Si MySQL todavía está arrancando, esperar a `healthy` antes de `db:init`.
 
 Configurar una clave **nueva y privada** en `GEMINI_API_KEY` de `server/.env`, guardar y reiniciar el backend. No compartir claves en chats ni versionarlas. No se ha usado la clave expuesta previamente. Sin clave funciona la recepción y descarga, pero no la lectura real de Gemini.
 
-Prueba manual: enviar un PDF con una fecha conocida, iniciar sesión, abrir Consultas → Ver documentos y análisis y descargar el original. Con clave válida debe aparecer el análisis; sin clave debe indicar pendiente y permitir reintentar. Una fecha extraída no debe aparecer automáticamente en Control de plazos.
+Prueba manual: enviar un PDF con una fecha conocida, iniciar sesión, abrir Consultas → Ver documentos y análisis y descargar el original. Debe mostrarse pendiente sin un análisis generado al enviar el formulario. Con la cuenta del abogado asignado o Gerencia, pulsar **Analizar con Gemini**: con clave válida debe aparecer el análisis; sin clave debe indicar el fallo y permitir reintentar. Soporte no debe ver el botón ni poder ejecutar esa operación mediante la API. Una fecha extraída no debe aparecer automáticamente en Control de plazos.
 
 Endpoints adicionales, todos privados:
 - `GET /api/cases/:id/documents`: metadatos y análisis, sin contenido binario.
 - `GET /api/documents/:id/download`: descarga autenticada como adjunto.
-- `POST /api/documents/:id/analyze`: reintento de Gemini limitado por frecuencia.
+- `POST /api/documents/:id/analyze`: análisis inicial o reanálisis limitado por frecuencia, reservado a Gerencia y al abogado asignado.
 
 Pruebas: `npm test` incluye validación documental y Gemini con respuestas simuladas. Desde `server/`, `node scripts/integration/documents-smoke.js` inicia una API temporal en puerto 3002, usa MySQL real, comprueba persistencia, acceso privado y fallos de carga, y elimina su cuenta y datos de prueba. No contacta Gemini ni necesita una clave. No usar simultáneamente con otra API en 3002.
 
@@ -124,13 +126,13 @@ El diagnóstico `npm run gemini:check` usa el mismo transporte y límite que la 
 
 ### Aclaraciones y vigencia del análisis documental
 
-El documento se analiza automáticamente al registrar la consulta: abrir **Ver documentos y análisis** solo muestra el resultado guardado. El panel ahora indica la fecha (hora de Lima), el origen del análisis y las preguntas y respuestas que efectivamente se enviaron como contexto. **Volver a analizar** toma una copia de las respuestas guardadas del mismo caso, junto al archivo original y la descripción; no cambia el original ni crea otro caso. Se envían hasta las 20 respuestas más recientes por fecha de respuesta (desempate por identificador), en orden cronológico, excluyendo solicitudes pendientes o canceladas; si hay más, se muestra el número enviado y el total disponible.
+El documento nuevo permanece pendiente hasta que el abogado asignado o Gerencia solicita **Analizar con Gemini**. Abrir **Ver documentos y análisis** solo muestra el estado o resultado guardado. Los análisis automáticos anteriores se identifican como generados por una versión previa y se conservan. Después de un análisis completado, el panel indica la fecha (hora de Lima), el origen del análisis y las preguntas y respuestas que efectivamente se enviaron como contexto. **Volver a analizar** toma una copia de las respuestas guardadas del mismo caso, junto al archivo original y la descripción; no cambia el original ni crea otro caso. Se envían hasta las 20 respuestas más recientes por fecha de respuesta (desempate por identificador), en orden cronológico, excluyendo solicitudes pendientes o canceladas; si hay más, se muestra el número enviado y el total disponible.
 
 El prompt exige integrar los datos declarados en el resumen, revisar la información faltante y distinguir datos ya aclarados de acreditación documental aún pendiente, sin atribuir declaraciones a páginas del PDF ni convertirlas en hechos probados. Mostrar una respuesta en **Contexto enviado a Gemini** acredita su envío, no garantiza que el modelo la haya interpretado correctamente. El abogado debe contrastar el resultado.
 
 Si hay respuestas recientes ausentes del contexto guardado, se avisa que deben incorporarse mediante otro análisis. Si el cliente responde durante una generación, esa respuesta no se marca como incorporada al resultado en curso. Un fallo conserva el análisis, su fecha y su contexto anterior. Las versiones del historial conservan su propio contexto, sin reemplazarlo por las respuestas actuales. Los análisis antiguos sin contexto se identifican como tales; no se inventa qué respuestas recibieron.
 
-Tras actualizar, detener la aplicación y ejecutar **`npm run db:init`**: añade `documents.analysis_context` como JSON nullable sin borrar documentos ni análisis. Después iniciar con `npm run dev`. La migración puede repetirse. Pruebas: `npm test`, `npm run build` y, desde `server/`, `node scripts/integration/analysis-context-smoke.js`, `node scripts/integration/clarifications-smoke.js` y `node scripts/integration/versions-smoke.js` uno después de otro. Usan MySQL de prueba, API temporal en 3002, Gemini simulado y limpieza de sus fixtures. El recorrido `acceptance-browser.js` verifica aviso de actualización, respuestas visibles y su presencia en la petición enviada al proveedor simulado.
+Tras actualizar, detener la aplicación y ejecutar **`npm run db:init`**: añade `documents.analysis_context` como JSON nullable y el estado `pending` sin borrar documentos ni análisis. Después iniciar con `npm run dev`. La migración puede repetirse. Pruebas: `npm test`, `npm run build` y, desde `server/`, `node scripts/integration/analysis-context-smoke.js`, `node scripts/integration/clarifications-smoke.js` y `node scripts/integration/versions-smoke.js` uno después de otro. Usan MySQL de prueba, API temporal en 3002, Gemini simulado y limpieza de sus fixtures. El recorrido `acceptance-browser.js` verifica aviso de actualización, respuestas visibles y su presencia en la petición enviada al proveedor simulado.
 
 ## Especialidad Laboral y circuito de aclaraciones
 

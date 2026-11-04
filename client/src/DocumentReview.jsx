@@ -8,7 +8,13 @@ const reasons = {
   analysis_failed:
     "No se obtuvo un resultado válido. El archivo sigue guardado.",
 };
-export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
+export default function DocumentReview({
+  caseId,
+  api,
+  onClose,
+  onRefresh,
+  canAnalyze = false,
+}) {
   const [documents, setDocuments] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -87,9 +93,8 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
         </div>
         <p className="help">
           Análisis orientativo. Contrasta cada dato con el documento original.{" "}
-          El documento se analiza automáticamente al registrar la consulta.
-          Abrir esta ventana muestra el resultado guardado; no inicia otro
-          análisis.
+          El abogado revisa el original y decide cuándo solicitar el análisis
+          con Gemini. Abrir esta ventana no inicia un análisis.
         </p>
         {error && (
           <div className="error" role="alert">
@@ -119,10 +124,14 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
             </div>
             {doc.analysis_status !== "analyzed" && (
               <div className="notice">
-                Pendiente de análisis.{" "}
+                {doc.analysis_status === "pending"
+                  ? "Pendiente de revisión por el abogado. El archivo todavía no se ha enviado a Gemini."
+                  : "Análisis pendiente de completar."}{" "}
                 {doc.failure_message ||
                   reasons[doc.failure_reason] ||
-                  "Requiere revisión manual."}
+                  (doc.analysis_status !== "pending"
+                    ? "Requiere revisión manual."
+                    : "")}
               </div>
             )}
             {doc.analysis && (
@@ -140,8 +149,10 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
                   <div className="notice" role="status">
                     {doc.analysis_context
                       ? `Hay ${doc.new_clarifications_count} aclaración(es) reciente(s) sin incorporar a este análisis.`
-                      : "Hay respuestas del cliente y este análisis antiguo no registra cuáles recibió."}
-                    {" "}Pulsa «Volver a analizar» para enviar las respuestas actuales.
+                      : "Hay respuestas del cliente y este análisis antiguo no registra cuáles recibió."}{" "}
+                    {canAnalyze
+                      ? "Pulsa «Volver a analizar» para enviar las respuestas actuales."
+                      : "El abogado puede actualizar el análisis con las respuestas actuales."}
                   </div>
                 )}
                 {doc.failure_reason && (
@@ -154,23 +165,32 @@ export default function DocumentReview({ caseId, api, onClose, onRefresh }) {
                 <AnalysisContent analysis={doc.analysis} />
               </>
             )}
-            <button
-              className="primary"
-              onClick={() => retry(doc.id)}
-              disabled={busy}
-            >
-              {busy
-                ? "Analizando documento…"
-                : doc.analysis
-                  ? "Volver a analizar"
-                  : "Analizar con Gemini"}
-            </button>
-            <p className="help">
-              El análisis puede tardar hasta 2 minutos. Las referencias de la IA
-              también requieren comprobación. Se enviarán las respuestas del
-              cliente que estén guardadas en «Aclaraciones» (hasta las 20 más
-              recientes).
-            </p>
+            {canAnalyze && (
+              <button
+                className="primary"
+                onClick={() => retry(doc.id)}
+                disabled={busy}
+              >
+                {busy
+                  ? "Analizando documento…"
+                  : doc.analysis
+                    ? "Volver a analizar"
+                    : "Analizar con Gemini"}
+              </button>
+            )}
+            {canAnalyze ? (
+              <p className="help">
+                El análisis puede tardar hasta 2 minutos. Las referencias de la
+                IA también requieren comprobación. Se enviarán las respuestas
+                del cliente que estén guardadas en «Aclaraciones» (hasta las 20
+                más recientes).
+              </p>
+            ) : (
+              <p className="help">
+                El análisis con Gemini lo inicia el abogado asignado o Gerencia.
+                Puedes descargar el original y consultar los análisis guardados.
+              </p>
+            )}
           </article>
         ))}
       </section>

@@ -2,6 +2,8 @@
 
 Documento de apoyo para redactar y explicar la tesis. Revisión del **1 de noviembre de 2026**, sobre la implementación `4380ba0acaa75ca8cbcf17205ec528c8f21d90df`. Sustituye la descripción funcional anterior; el informe de pruebas del 25 de octubre conserva su propia versión y cifras. No sustituye la observación del procedimiento actual del estudio ni presenta resultados de ahorro de tiempo. Ver también la [revisión de objetivos y pendientes](REVISION_OBJETIVOS_Y_PENDIENTES.md).
 
+> Actualización del flujo documental, 3 de noviembre de 2026: el adjunto queda pendiente al registrar la consulta. La clasificación inicial utiliza solo la descripción; el abogado asignado o Gerencia solicita expresamente el análisis documental. Se conservan los análisis anteriores. Las evidencias históricas indicadas más adelante mantienen sus versiones y alcances.
+
 ## 1. Problema planteado y aspecto pendiente de verificar
 
 El autor señala, de forma preliminar, que localizar los documentos de una persona puede tomar tiempo. Esta apreciación permite plantear la búsqueda documental como un problema por investigar, pero todavía no permite determinar su duración, frecuencia, causas o impacto. El procedimiento manual real está pendiente de observar: no se ha confirmado si se utiliza papel, Word, Excel, correo u otra combinación de herramientas.
@@ -10,7 +12,7 @@ La solución propuesta centraliza la consulta, su documento original y las actua
 
 ## 2. Descripción general de la propuesta
 
-LegalTriage AI es una aplicación web que apoya la recepción y gestión inicial de consultas jurídicas. El cliente registra sus datos, describe la situación y puede adjuntar un documento. La aplicación conserva la información en MySQL y solicita a Gemini una clasificación o un análisis orientativo, cuando el servicio está disponible. El equipo revisa los antecedentes, puede solicitar aclaraciones, asignar al abogado correspondiente y preparar una respuesta, propuesta o cotización.
+LegalTriage AI es una aplicación web que apoya la recepción y gestión inicial de consultas jurídicas. El cliente registra sus datos, describe la situación y puede adjuntar un documento. La aplicación conserva la información en MySQL y solicita a Gemini una clasificación orientativa del texto para la derivación. El archivo queda pendiente hasta que el abogado asignado o Gerencia decide analizarlo con Gemini, si el servicio está disponible. El equipo revisa los antecedentes, puede solicitar aclaraciones, asignar al abogado correspondiente y preparar una respuesta, propuesta o cotización.
 
 La atención se mantiene bajo control humano. El sistema no determina la admisibilidad jurídica de una consulta ni reemplaza el criterio profesional. Una clasificación sugerida puede revisarse manualmente; las referencias extraídas deben contrastarse con el archivo original y las fechas mencionadas no se convierten automáticamente en plazos procesales.
 
@@ -22,7 +24,7 @@ La integración utiliza la API de Gemini con instrucciones y un esquema de respu
 |---|---|---|
 | Cliente | Registra una consulta y, mediante enlaces privados, responde aclaraciones o consulta la comunicación aprobada. | Los enlaces no otorgan acceso al panel interno ni a las conclusiones privadas del abogado. |
 | Gerencia | Administra cuentas, roles, perfiles y especialidades; consulta todos los casos y puede intervenir en su atención. | La administración no sustituye la revisión profesional de la información generada por IA. |
-| Soporte | Consulta la recepción, tramita aclaraciones, revisa especialidades y participa en la asignación de responsables. | No accede a las evaluaciones jurídicas internas ni a sus versiones; no registra plazos. |
+| Soporte | Consulta la recepción, tramita aclaraciones, revisa especialidades y participa en la asignación de responsables. | No inicia análisis documentales, no accede a las evaluaciones jurídicas internas ni a sus versiones y no registra plazos. |
 | Abogado | Atiende sus casos asignados, revisa documentos, registra evaluaciones, aprueba decisiones y registra plazos. | No consulta casos ajenos ni reasigna responsables mediante las operaciones reservadas a Gerencia/Soporte. |
 | Gemini | Sugiere una especialidad y genera un análisis estructurado del documento y contexto recibido. | No aprueba respuestas, decide el cierre ni registra vencimientos automáticamente. |
 
@@ -35,7 +37,7 @@ El sistema permite que una cuenta de Gerencia atienda casos si tiene un perfil d
 | F01 | Recepción y registro | Formulario con datos de contacto, descripción y consentimiento. Admite un adjunto opcional: PDF de hasta 50 páginas, PNG o JPG, con máximo de 8 MB. El formato se comprueba por el contenido. |
 | F02 | Consulta documental | El equipo autorizado puede localizar el caso, consultar su información y descargar el documento original. Un abogado accede solo a documentos de sus casos asignados. |
 | F03 | Clasificación asistida | Categorías Civil, Corporativo, Familia, Bancario, Laboral y Penal; Indeterminado se utiliza cuando se requiere revisión. La clasificación puede revisarse manualmente. |
-| F04 | Análisis con Gemini | Presenta resumen, tipo de documento, legibilidad, hallazgos y fechas con referencias de página e información faltante. Los errores externos conservan el documento y permiten revisión manual/reintento. El reanálisis registra cuáles aclaraciones se enviaron y avisa si hay respuestas recientes sin incorporar. |
+| F04 | Análisis con Gemini | Se inicia expresamente por el abogado asignado o Gerencia; el adjunto queda pendiente al registrar la consulta. Presenta resumen, tipo de documento, legibilidad, hallazgos y fechas con referencias de página e información faltante. Los errores externos conservan el documento y permiten revisión manual/reintento. El reanálisis registra cuáles aclaraciones se enviaron y avisa si hay respuestas recientes sin incorporar. |
 | F05 | Asignación por especialidad | Elige entre abogados disponibles del área con menor número de casos activos; en empate utiliza el identificador. Sin perfil coincidente, el caso queda pendiente. No cambia automáticamente un responsable ya asignado. |
 | F06 | Aclaraciones | El equipo redacta o adapta preguntas y crea un enlace privado de un uso, con vigencia de siete días. La respuesta se incorpora al mismo caso. En esta etapa la respuesta del cliente es textual. |
 | F07 | Evaluación y comunicación | Borrador con fundamentos internos y respuesta, propuesta o cotización. La cotización requiere importe en soles. El equipo revisa y confirma la aprobación; el contenido aprobado queda bloqueado para edición. |
@@ -55,7 +57,7 @@ El diagrama debe reflejar las intervenciones humanas y las automatizaciones efec
 | Etapa del diagrama | Implementación actual | Precisión necesaria en la tesis |
 |---|---|---|
 | Completar formulario y adjuntar documentos | Registro público y un archivo opcional por consulta. | Esta versión no es una carga múltiple de expedientes. |
-| Recibir y analizar la consulta | Validación de campos/archivo y clasificación/análisis con Gemini. | Validar el formulario no equivale a declarar que la consulta es jurídicamente válida o clara. |
+| Recibir y analizar la consulta | Validación de campos/archivo y clasificación del texto con Gemini; el análisis del adjunto lo solicita después el profesional. | Validar el formulario no equivale a declarar que la consulta es jurídicamente válida o clara. |
 | Solicitar aclaración cuando falta información | El análisis puede señalar datos faltantes; el equipo revisa y crea la solicitud. | La selección de preguntas y el envío no son un rechazo o una aclaración automática decididos por la IA. |
 | Registrar, clasificar y derivar | Persistencia del caso, categoría revisable y asignación por especialidad/carga cuando hay perfiles disponibles. | No se garantiza un responsable automático si no existe un abogado elegible. |
 | Evaluar antecedentes y elaborar propuesta | Evaluación del abogado, borradores y aprobación explícita. | Gemini no emite la aprobación profesional. |
@@ -98,7 +100,7 @@ Este diseño mantiene la decisión jurídica en el equipo profesional y concentr
 | Recordatorios por Gmail | Prueba con MySQL y SMTP simulado de etapas, concurrencia, reinicio, destinatario, errores y arranque automático del worker desde la API. | No certifica que Gmail entregue cada correo ni que una fecha registrada sea jurídicamente correcta. |
 | Confirmación posterior del autor | El autor informó funcionamiento de análisis con aclaraciones, actualización de consultas y recordatorios en su equipo. | Confirmación reportada, no una evaluación independiente con personal del estudio ni una muestra para medir impacto. |
 
-No se ejecutó una nueva batería de pruebas para redactar este documento; se describen las comprobaciones previas y las fuentes del repositorio. Las cifras corresponden a sus respectivas versiones y alcances.
+La actualización del flujo documental se comprobó con 44 pruebas automatizadas, compilación, seis grupos de integración y 13 comprobaciones de navegador con MySQL real y Gemini/SMTP simulados. Se verificó la recepción pendiente, el análisis solicitado por el profesional, las aclaraciones, la conservación de versiones y los permisos de Soporte. Las demás evidencias conservan las comprobaciones previas y las fuentes del repositorio. Las cifras corresponden a sus respectivas versiones y alcances.
 
 ## 9. Trabajo pendiente para completar la evaluación de la tesis
 

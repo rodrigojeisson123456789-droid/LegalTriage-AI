@@ -31,7 +31,7 @@ try {
   mime_type VARCHAR(50) NOT NULL,
   page_count INT NOT NULL,
   content MEDIUMBLOB NOT NULL,
-  analysis_status ENUM('analyzed','unavailable') NOT NULL,
+  analysis_status ENUM('analyzed','unavailable','pending') NOT NULL,
   failure_reason VARCHAR(50) NULL,
   analysis JSON NULL,
   analysis_context JSON NULL,
@@ -39,6 +39,13 @@ try {
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY(case_id) REFERENCES cases(id)
 )`);
+  const [analysisStatusColumns] = await db.query(
+    "SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documents' AND COLUMN_NAME='analysis_status'",
+  );
+  if (!analysisStatusColumns[0].COLUMN_TYPE.includes("'pending'"))
+    await db.query(
+      "ALTER TABLE documents MODIFY analysis_status ENUM('analyzed','unavailable','pending') NOT NULL",
+    );
   const [contextColumns] = await db.query(
     "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='documents' AND COLUMN_NAME='analysis_context'",
   );

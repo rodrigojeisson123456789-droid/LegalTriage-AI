@@ -5,8 +5,8 @@ export default function AnalysisContext({ context }) {
     return (
       <p className="help">
         Este análisis anterior no tiene un registro de las aclaraciones
-        enviadas. Vuelve a analizar para actualizarlo con las respuestas
-        disponibles.
+        enviadas. El abogado puede solicitar un nuevo análisis con las
+        respuestas disponibles.
       </p>
     );
   return (
@@ -14,7 +14,7 @@ export default function AnalysisContext({ context }) {
       <h3>Contexto enviado a Gemini</h3>
       <p className="help">
         {context.source === "initial"
-          ? "Análisis automático al registrar la consulta: documento y descripción inicial."
+          ? "Análisis automático guardado por una versión anterior del sistema: documento y descripción inicial."
           : "Análisis solicitado por el equipo: documento, descripción inicial y respuestas disponibles del cliente."}
       </p>
       {context.clarifications.length === 0 ? (

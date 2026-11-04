@@ -2,7 +2,7 @@
 
 Aplicación web para la recepción y atención inicial de consultas en **Núñez Saldaña S.A.C.** React 19 y Vite en la interfaz; Node.js/Express y MySQL 8.4 en el servidor, con Gemini y Gmail configurables.
 
-Permite registrar consultas y documentos, clasificar por especialidad, asignar responsables, gestionar aclaraciones, aprobar respuestas, consultar versiones y controlar plazos. El equipo jurídico revisa los resultados de IA y confirma las fechas.
+Permite registrar consultas y documentos, clasificar por especialidad, asignar responsables, gestionar aclaraciones, aprobar respuestas, consultar versiones y controlar plazos. El adjunto se guarda pendiente de revisión: el abogado asignado o Gerencia decide cuándo analizarlo con Gemini. La clasificación inicial utiliza solo la descripción para orientar la asignación; el equipo jurídico revisa los resultados y confirma las fechas.
 
 ## Encender una instalación existente
 

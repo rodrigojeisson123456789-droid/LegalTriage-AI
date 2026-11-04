@@ -575,9 +575,8 @@ function App() {
                       </p>
                       {receipt.document_status && (
                         <p>
-                          {receipt.document_status === "analyzed"
-                            ? "Documento recibido y analizado para revisión del abogado."
-                            : "Documento guardado; el análisis queda pendiente de revisión."}
+                          Documento guardado y pendiente de revisión por el
+                          abogado.
                         </p>
                       )}
                       <button onClick={() => setReceipt(null)}>
@@ -667,7 +666,9 @@ function App() {
                         </label>
                         <p className="help">
                           Un PDF de hasta 50 páginas, JPG o PNG. Máximo 8 MB.
-                          Sube una copia legible y sin contraseña.
+                          Sube una copia legible y sin contraseña. El abogado
+                          revisará el archivo y decidirá si solicita un análisis
+                          con Gemini.
                         </p>
                         {attachmentName && (
                           <p className="help">Seleccionado: {attachmentName}</p>
@@ -687,7 +688,7 @@ function App() {
                           <ShieldCheck size={15} /> Envío seguro y confidencial
                         </span>
                         <button className="primary" disabled={busy}>
-                          {busy ? "Enviando y analizando…" : "Enviar consulta"}
+                          {busy ? "Enviando consulta…" : "Enviar consulta"}
                           <ArrowRight size={17} />
                         </button>
                       </div>
@@ -1425,6 +1426,7 @@ function App() {
           )}
           {user && documentCase && (
             <DocumentReview
+              canAnalyze={canLegal}
               caseId={documentCase}
               api={api}
               onClose={() => setDocumentCase(null)}

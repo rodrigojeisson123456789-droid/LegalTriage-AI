@@ -92,23 +92,11 @@ app.post(
         : req.body.consent,
     });
     const document = req.file ? await validateDocument(req.file) : null;
-    const initialContext = {
-      source: "initial",
-      total_answered: 0,
-      clarifications: [],
-    };
-    const result = document
-      ? await analyzeDocument(document, input.description)
-      : null;
-    const ai = document
-      ? {
-          specialty: result.analysis?.specialty || "Indeterminado",
-          classification_status:
-            result.status === "analyzed" ? "classified" : "unavailable",
-        }
-      : await classify(input.description);
+    // El triaje inicial solo utiliza el texto; el adjunto permanece privado
+    // hasta que un profesional solicite expresamente su análisis.
+    const ai = await classify(input.description);
     const connection = await db.getConnection();
-    let id, documentId;
+    let id;
     try {
       await connection.beginTransaction();
       const [created] = await connection.execute(
@@ -125,7 +113,7 @@ app.post(
       );
       id = created.insertId;
       if (document) {
-        const [savedDocument] = await connection.execute(
+        await connection.execute(
           "INSERT INTO documents (case_id,original_name,mime_type,page_count,content,analysis_status,failure_reason,analysis,analysis_context,analyzed_at) VALUES (?,?,?,?,?,?,?,?,?,?)",
           [
             id,
@@ -133,14 +121,13 @@ app.post(
             document.mime,
             document.pages,
             document.buffer,
-            result.status,
-            result.reason,
-            result.analysis ? JSON.stringify(result.analysis) : null,
-            result.analysis ? JSON.stringify(initialContext) : null,
-            result.analysis ? new Date() : null,
+            "pending",
+            null,
+            null,
+            null,
+            null,
           ],
         );
-        documentId = savedDocument.insertId;
       }
       await recordEvent(connection, id, "case.created", { type: "cliente" });
       await recordEvent(connection, id, "case.classified", null, {
@@ -155,23 +142,6 @@ app.post(
           { type: "cliente" },
           { mime: document.mime, pages: document.pages },
         );
-        const eventId = await recordEvent(
-          connection,
-          id,
-          "document.analyzed",
-          null,
-          {
-            status: result.status,
-          },
-        );
-        if (result.status === "analyzed")
-          await recordVersion(connection, eventId, "document", {
-            document_id: documentId,
-            name: document.name,
-            pages: document.pages,
-            analysis: result.analysis,
-            analysis_context: initialContext,
-          });
       }
       await autoAssign(connection, id);
       await connection.commit();
@@ -185,7 +155,7 @@ app.post(
       id,
       ...ai,
       status: "Nuevo",
-      document_status: result?.status || null,
+      document_status: document ? "pending" : null,
     });
   },
 );
@@ -349,6 +319,7 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
   // Captura una sola vez las respuestas enviadas. Si llega otra durante la
   // generación, GET /documents la detectará como pendiente de incorporar.
   const context = await getClarificationContext(row.case_id);
+  if (!row.analysis) context.source = "review";
   const result = await analyzeDocument(
     { buffer: row.content, mime: row.mime_type, pages: row.page_count },
     formatClarificationContext(row.description, context),
@@ -363,7 +334,7 @@ app.post("/api/documents/:id/analyze", limited, async (req, res) => {
       ]);
       await guardCaseWrite(req, connection, row.case_id);
       await connection.execute(
-        "UPDATE documents SET failure_reason=? WHERE id=?",
+        "UPDATE documents SET failure_reason=?,analysis_status=IF(analysis IS NULL,'unavailable',analysis_status) WHERE id=?",
         [result.reason, id],
       );
       await recordEvent(

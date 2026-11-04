@@ -17,8 +17,12 @@ const mock = `
   let n = 0, original;
   globalThis.fetch = async (url, options) => {
     if (!String(url).startsWith('https://generativelanguage.googleapis.com/')) throw new Error('Destino inesperado');
-    n++;
     const payload = JSON.parse(options.body), text = payload.contents[0].parts[0].text;
+    if (payload.generationConfig.responseSchema.type === 'STRING') {
+      if (payload.contents[0].parts.some(p => p.inlineData)) throw new Error('No debe enviar el adjunto al registrar');
+      return {ok:true,status:200,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify('Laboral')}]}}]})};
+    }
+    n++;
     const pdf = payload.contents[0].parts[1].inlineData.data;
     if (!original) original = pdf;
     if (pdf !== original || !text.includes('Consulta original ficticia')) throw new Error('Falta documento o consulta');
@@ -119,8 +123,14 @@ try {
   assert.equal(submitted.status, 201);
   caseId = (await submitted.json()).id;
   let doc = await documents();
+  assert.equal(doc.analysis_status, "pending");
+  assert.equal(doc.analysis, null);
+  assert.equal(doc.analysis_context, null);
+  assert.equal(doc.analyzed_at, null);
+  assert.equal((await req(`/documents/${doc.id}/analyze`, "POST")).status, 200);
+  doc = await documents();
   assert.equal(doc.analysis_status, "analyzed");
-  assert.equal(doc.analysis_context.source, "initial");
+  assert.equal(doc.analysis_context.source, "review");
   assert.equal(doc.analysis_context.clarifications.length, 0);
   assert.equal(doc.analysis_outdated, false);
 
@@ -190,7 +200,7 @@ try {
   const original = await (
     await req(`/cases/${caseId}/history/${events.at(-1).id}/version`)
   ).json();
-  assert.equal(original.payload.analysis_context.source, "initial");
+  assert.equal(original.payload.analysis_context.source, "review");
   assert.equal(original.payload.analysis_context.clarifications.length, 0);
   const latest = await (
     await req(`/cases/${caseId}/history/${events[0].id}/version`)
@@ -210,7 +220,7 @@ try {
     401,
   );
   console.log(
-    "Analysis context smoke OK: análisis inicial automático, respuestas reales enviadas al reanalizar, respuesta concurrente pendiente, fallo conserva contexto/análisis, versiones independientes y datos antiguos sin contexto inventado.",
+    "Analysis context smoke OK: documento pendiente al registrar, primer análisis solicitado por el profesional, respuestas reales enviadas al reanalizar, respuesta concurrente pendiente, fallo conserva contexto/análisis, versiones independientes y datos antiguos sin contexto inventado.",
   );
 } finally {
   child?.kill();

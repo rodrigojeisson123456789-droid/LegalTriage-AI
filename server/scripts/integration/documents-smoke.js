@@ -65,7 +65,7 @@ try {
   });
   assert.equal(submitted.status, 201);
   const record = await submitted.json();
-  assert.equal(record.document_status, "unavailable");
+  assert.equal(record.document_status, "pending");
   assert.equal(record.specialty, "Indeterminado");
   assert.equal(
     (await fetch(base + `/cases/${record.id}/documents`)).status,
@@ -84,7 +84,7 @@ try {
     })
   ).json();
   assert.equal(rows.length, 1);
-  assert.equal(rows[0].failure_reason, "missing_key");
+  assert.equal(rows[0].failure_reason, null);
   assert.equal(rows[0].original_name, "contrato.pdf");
   assert.equal(rows[0].analysis, null);
   assert.equal(rows[0].content, undefined);

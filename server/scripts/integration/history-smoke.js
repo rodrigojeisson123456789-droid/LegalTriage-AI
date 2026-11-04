@@ -96,7 +96,10 @@ try {
     ),
   );
   assert.ok(first.events.some((e) => e.action === "document.received"));
-  assert.ok(first.events.some((e) => e.action === "document.analyzed"));
+  assert.equal(
+    first.events.some((e) => e.action === "document.analyzed"),
+    false,
+  );
   assert.equal(
     (
       await req(manager.cookie, `/cases/${id}`, "PATCH", {

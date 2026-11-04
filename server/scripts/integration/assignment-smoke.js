@@ -254,13 +254,29 @@ try {
   const created = await submitted.json();
   ids.push(created.id);
   assert.equal(created.specialty, area);
-  assert.equal(created.document_status, "analyzed");
+  assert.equal(created.document_status, "pending");
   const [saved] = await db.execute(
     "SELECT specialty,lawyer_id FROM cases WHERE id=?",
     [created.id],
   );
   assert.equal(saved[0].specialty, area);
   assert.equal(saved[0].lawyer_id, users[0]);
+  const pendingDoc = (
+    await (await req(`/cases/${created.id}/documents`)).json()
+  )[0];
+  assert.equal(pendingDoc.analysis, null);
+  assert.equal(pendingDoc.analysis_status, "pending");
+  const beforeAnalysis = await (
+    await req(`/cases/${created.id}/history`)
+  ).json();
+  assert.equal(
+    beforeAnalysis.events.some((e) => e.action === "document.analyzed"),
+    false,
+  );
+  assert.equal(
+    (await req(`/documents/${pendingDoc.id}/analyze`, "POST")).status,
+    200,
+  );
   const timeline = await (await req(`/cases/${created.id}/history`)).json();
   const event = timeline.events.find((e) => e.action === "document.analyzed");
   const snapshot = await (

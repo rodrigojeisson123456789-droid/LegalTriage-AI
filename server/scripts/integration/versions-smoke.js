@@ -22,7 +22,7 @@ const analysis = {
   dates: [],
   missing_information: [],
 };
-const mock = `let n=0;globalThis.fetch=async(url)=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Destino inesperado');n++;if(n>=3&&n<=5)return {ok:false,status:503,json:async()=>({})};return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({...${JSON.stringify(analysis)},summary:'Análisis ficticio '+n})}]}}]})}};await import('./src/index.js');`;
+const mock = `let n=0;globalThis.fetch=async(url,options)=>{if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Destino inesperado');if(JSON.parse(options.body).generationConfig.responseSchema.type==='STRING')return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify('Laboral')}]}}]})};n++;if(n>=3&&n<=5)return {ok:false,status:503,json:async()=>({})};return {ok:true,json:async()=>({candidates:[{content:{parts:[{text:JSON.stringify({...${JSON.stringify(analysis)},summary:'Análisis ficticio '+n})}]}}]})}};await import('./src/index.js');`;
 async function req(cookie, path, method = "GET", body) {
   return fetch(base + path, {
     method,
@@ -117,6 +117,16 @@ try {
       })
     ).status,
     204,
+  );
+  const receivedDoc = (
+    await (await req(manager.cookie, `/cases/${id}/documents`)).json()
+  )[0];
+  assert.equal(receivedDoc.analysis_status, "pending");
+  assert.equal(receivedDoc.analysis, null);
+  assert.equal(
+    (await req(lawyer.cookie, `/documents/${receivedDoc.id}/analyze`, "POST"))
+      .status,
+    200,
   );
   let events = (await (await req(manager.cookie, path)).json()).events;
   const initial = events.find((e) => e.action === "document.analyzed");

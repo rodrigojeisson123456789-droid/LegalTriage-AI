@@ -1,6 +1,6 @@
 # Diagramas actuales de LegalTriage AI
 
-Revisión: 1 de noviembre de 2026. Código de referencia: `4380ba0`. Figuras técnicas de la implementación, no resultados de mediciones ni diagramas del procedimiento manual del estudio.
+Base revisada el 1 de noviembre de 2026 (`4380ba0`), con actualización del flujo documental el 3 de noviembre de 2026. Figuras técnicas de la implementación, no resultados de mediciones ni diagramas del procedimiento manual del estudio.
 
 ## Arquitectura
 
@@ -20,9 +20,9 @@ El esquema contiene **13 tablas y 19 claves foráneas**, contrastadas mediante m
 
 ![Flujo de atención inicial](diagramas/flujo.png)
 
-La validación del formulario no determina viabilidad jurídica. La solicitud de aclaración, la aprobación y la decisión de seguimiento/cierre permanecen a cargo del equipo autorizado. El reanálisis utiliza el archivo original y las respuestas guardadas del mismo caso. La aprobación puede enviar la respuesta por Gmail cuando está configurado. Los recordatorios de plazos se envían al responsable, no al cliente. La atención inicial cerrada no representa el cierre de todo un proceso judicial.
+La validación del formulario no determina viabilidad jurídica. La clasificación inicial utiliza solo la descripción. El documento queda pendiente; el abogado asignado o Gerencia revisa el original y decide si solicita un análisis con Gemini. Soporte puede consultar los resultados guardados, pero no iniciar análisis. La solicitud de aclaración, la aprobación y la decisión de seguimiento/cierre permanecen a cargo del equipo autorizado. El reanálisis utiliza el archivo original y las respuestas guardadas del mismo caso. La aprobación puede enviar la respuesta por Gmail cuando está configurado. Los recordatorios de plazos se envían al responsable, no al cliente. La atención inicial cerrada no representa el cierre de todo un proceso judicial.
 
-El diagrama resume el flujo; las restricciones de aprobación, plazos y permisos se detallan en la [descripción funcional](DESCRIPCION_FUNCIONAL.md) y en el [README técnico](../../README.md).
+El diagrama resume el flujo; las restricciones de aprobación, plazos y permisos se detallan en la [descripción funcional](DESCRIPCION_FUNCIONAL.md) y en el [referencia técnica](../REFERENCIA_TECNICA.md).
 
 ## Fuentes editables y reproducción
 

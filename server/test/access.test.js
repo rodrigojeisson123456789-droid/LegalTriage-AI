@@ -10,6 +10,9 @@ test("roles: Gerencia administra, Soporte tramita y Abogado evalúa sin reasigna
   );
   assert.equal(routeAllowed("soporte", "GET", "/cases/1/evaluation"), false);
   assert.equal(routeAllowed("soporte", "POST", "/deadlines"), false);
+  assert.equal(routeAllowed("soporte", "POST", "/documents/1/analyze"), false);
+  assert.equal(routeAllowed("soporte", "GET", "/documents/1/download"), true);
+  assert.equal(routeAllowed("abogado", "POST", "/documents/1/analyze"), true);
   assert.equal(
     routeAllowed("soporte", "POST", "/cases/1/notifications", {
       kind: "response",
