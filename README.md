@@ -4,6 +4,8 @@ Aplicación web para la recepción y atención inicial de consultas en **Núñez
 
 Permite registrar consultas y documentos, clasificar por especialidad, asignar responsables, gestionar aclaraciones, aprobar respuestas, consultar versiones y controlar plazos. El adjunto se guarda pendiente de revisión: el abogado asignado o Gerencia decide cuándo analizarlo con Gemini. La clasificación inicial utiliza solo la descripción para orientar la asignación; el equipo jurídico revisa los resultados y confirma las fechas.
 
+Las consultas con atención inicial cerrada pueden archivarse para despejar la lista habitual. Se consultan en **Archivadas** y pueden devolverse a Consultas conservando su estado cerrado, documentos y versiones.
+
 ## Encender una instalación existente
 
 Abre Docker Desktop y, desde la carpeta del proyecto, ejecuta:

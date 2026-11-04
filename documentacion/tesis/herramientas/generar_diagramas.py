@@ -97,6 +97,7 @@ flow = {
     "approve": "Abogado redacta, revisa\ny aprueba respuesta y decisión",
     "judicial": "Seguimiento judicial\nRegistrar fechas verificadas",
     "close": "Cerrar atención inicial\nNo equivale a concluir juicio",
+    "archive": "Archivo opcional por Abogado / Gerencia\nConservar expediente e historial",
     "respond": "Gmail configurado: respuesta aprobada\nEnlace privado para el cliente",
     "remind": "Panel y Gmail al responsable\n48 h / 24 h / vencido",
 }
@@ -113,6 +114,7 @@ for source, target, label in [
     ("reanalyze", "review", "Mantiene el mismo caso"), ("questions", "review", "Respuesta guardada"),
     ("review", "approve", "Criterio profesional"), ("approve", "judicial", "Decisión judicial"),
     ("approve", "close", "Decisión de cierre"), ("approve", "respond", "Aprobación explícita"),
+    ("close", "archive", "Archivar consulta"), ("archive", "close", "Devolver a lista, sigue cerrada"),
     ("judicial", "remind", "Solo plazos registrados"),
 ]:
     lines.append(f"{source} -> {target} [label={quoted(label)}];")

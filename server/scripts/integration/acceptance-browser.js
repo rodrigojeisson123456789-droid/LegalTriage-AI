@@ -649,11 +649,65 @@ try {
     "09-respuesta-final-movil.png",
     "Cliente ve respuesta e importe aprobados, sin notas internas; caso queda cerrado.",
   );
+  // Archivar organiza la lista y conserva contenido; devolver no reabre.
+  p.once("dialog", (dialog) => dialog.dismiss());
+  await row
+    .getByRole("button", { name: "Archivar consulta", exact: true })
+    .click();
+  assert.equal(await row.count(), 1);
+  p.once("dialog", (dialog) => dialog.accept());
+  await row
+    .getByRole("button", { name: "Archivar consulta", exact: true })
+    .click();
+  await row.waitFor({ state: "detached" });
+  const lists = p.getByRole("group", { name: "Elegir lista de consultas" });
+  await lists.getByRole("button", { name: /^Archivadas / }).click();
+  await row.getByText("Atención inicial cerrada", { exact: true }).waitFor();
+  await row.getByText(/Archivada el/).waitFor();
+  await row.getByRole("button", { name: "Ver documentos y análisis" }).click();
+  await p
+    .getByText(
+      "Consulta laboral ficticia con aclaraciones incorporadas. Segunda versión de prueba.",
+      { exact: true },
+    )
+    .waitFor();
+  await p.getByRole("link", { name: "Descargar original" }).waitFor();
+  await p.getByRole("button", { name: "Cerrar documentos" }).click();
+  await row.getByRole("button", { name: "Historial del caso" }).click();
+  await p
+    .getByText(
+      "Consulta archivada; se conservan el estado cerrado, los documentos y el historial.",
+      { exact: true },
+    )
+    .waitFor();
+  await p.getByRole("button", { name: "Cerrar historial" }).click();
+  await screenshot(p, "15-consulta-archivada.png");
+  p.once("dialog", (dialog) => dialog.accept());
+  await row
+    .getByRole("button", { name: "Devolver a Consultas", exact: true })
+    .click();
+  await row.waitFor({ state: "detached" });
+  await lists.getByRole("button", { name: /^Consultas / }).click();
+  await row.getByText("Atención inicial cerrada", { exact: true }).waitFor();
+  assert.equal(
+    await row.getByRole("button", { name: "Mover a evaluación" }).count(),
+    0,
+  );
+  passed(
+    "UI-14",
+    "Archivo y devolución de consulta cerrada",
+    "15-consulta-archivada.png",
+    "Confirmación cancelable, listas separadas, documento y análisis conservados, evento en historial y devolución sin reabrir la atención.",
+  );
   const s = await newPage();
   await login(s, support);
   const supportRow = s
     .getByRole("row")
     .filter({ has: s.getByText("#" + caseId, { exact: true }) });
+  assert.equal(
+    await supportRow.getByRole("button", { name: "Archivar consulta" }).count(),
+    0,
+  );
   assert.equal(
     await supportRow
       .getByRole("button", { name: "Evaluación y respuesta" })

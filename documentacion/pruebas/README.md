@@ -20,6 +20,7 @@ node scripts/integration/documents-smoke.js
 node scripts/integration/clarifications-smoke.js
 node scripts/integration/analysis-context-smoke.js
 node scripts/integration/evaluations-smoke.js
+node scripts/integration/archive-smoke.js
 node scripts/integration/assignment-smoke.js
 node scripts/integration/mail-smoke.js
 node scripts/integration/auto-mail-smoke.js

@@ -13,6 +13,8 @@ const state = z.enum([
 ]);
 const rules = {
   "case.created": z.object({}).strict(),
+  "case.archived": z.object({}).strict(),
+  "case.unarchived": z.object({}).strict(),
   "case.classified": z
     .object({
       specialty: z.enum(categories),

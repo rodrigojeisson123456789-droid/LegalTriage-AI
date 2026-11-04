@@ -241,13 +241,64 @@ app.get("/api/users", async (req, res) => {
   res.json(rows);
 });
 app.get("/api/cases", async (req, res) => {
+  const archive = z
+    .enum(["active", "archived"])
+    .default("active")
+    .parse(req.query.archive);
   const [rows] = await db.execute(
     "SELECT c.*,u.name AS lawyer_name FROM cases c LEFT JOIN users u ON u.id=c.lawyer_id " +
-      (req.user.role === "abogado" ? "WHERE c.lawyer_id=? " : "") +
-      "ORDER BY c.created_at DESC LIMIT 500",
+      `WHERE c.archived_at IS ${archive === "archived" ? "NOT " : ""}NULL ` +
+      (req.user.role === "abogado" ? "AND c.lawyer_id=? " : "") +
+      (archive === "archived"
+        ? "ORDER BY c.archived_at DESC,c.id DESC LIMIT 500"
+        : "ORDER BY c.created_at DESC,c.id DESC LIMIT 500"),
     req.user.role === "abogado" ? [req.user.id] : [],
   );
   res.json(rows);
+});
+app.patch("/api/cases/:id/archive", async (req, res) => {
+  const id = z.coerce.number().int().positive().parse(req.params.id);
+  const { archived } = z
+    .object({ archived: z.boolean() })
+    .strict()
+    .parse(req.body);
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.execute(
+      "SELECT status,archived_at FROM cases WHERE id=? FOR UPDATE",
+      [id],
+    );
+    await guardCaseWrite(req, connection, id);
+    if (archived && rows[0].status !== "Atención inicial cerrada") {
+      await connection.rollback();
+      return res
+        .status(409)
+        .json({
+          error:
+            "Solo puedes archivar una consulta con la atención inicial cerrada.",
+        });
+    }
+    if (Boolean(rows[0].archived_at) !== archived) {
+      await connection.execute("UPDATE cases SET archived_at=? WHERE id=?", [
+        archived ? new Date() : null,
+        id,
+      ]);
+      await recordEvent(
+        connection,
+        id,
+        archived ? "case.archived" : "case.unarchived",
+        req.user,
+      );
+    }
+    await connection.commit();
+    res.sendStatus(204);
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 });
 // Estas rutas están después del middleware de sesión. No hay directorio público de archivos.
 app.get("/api/cases/:id", async (req, res) => {

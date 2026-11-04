@@ -6,6 +6,10 @@ test("historial limita metadatos y rechaza texto privado, secretos y acciones de
   assert.deepEqual(eventDetails("evaluation.saved", { revision: 1 }), {
     revision: 1,
   });
+  for (const action of ["case.archived", "case.unarchived"]) {
+    assert.deepEqual(eventDetails(action, {}), {});
+    assert.throws(() => eventDetails(action, { notes: "privado" }));
+  }
   for (const data of [
     { revision: 1, notes: "privado" },
     { revision: 1, password: "secret" },

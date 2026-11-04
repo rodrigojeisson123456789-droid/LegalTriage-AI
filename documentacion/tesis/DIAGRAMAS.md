@@ -22,7 +22,9 @@ El esquema contiene **13 tablas y 19 claves foráneas**, contrastadas mediante m
 
 La validación del formulario no determina viabilidad jurídica. La clasificación inicial utiliza solo la descripción. El documento queda pendiente; el abogado asignado o Gerencia revisa el original y decide si solicita un análisis con Gemini. Soporte puede consultar los resultados guardados, pero no iniciar análisis. La solicitud de aclaración, la aprobación y la decisión de seguimiento/cierre permanecen a cargo del equipo autorizado. El reanálisis utiliza el archivo original y las respuestas guardadas del mismo caso. La aprobación puede enviar la respuesta por Gmail cuando está configurado. Los recordatorios de plazos se envían al responsable, no al cliente. La atención inicial cerrada no representa el cierre de todo un proceso judicial.
 
-El diagrama resume el flujo; las restricciones de aprobación, plazos y permisos se detallan en la [descripción funcional](DESCRIPCION_FUNCIONAL.md) y en el [referencia técnica](../REFERENCIA_TECNICA.md).
+El diagrama resume el flujo; las restricciones de aprobación, plazos y permisos se detallan en la [descripción funcional](DESCRIPCION_FUNCIONAL.md) y en la [referencia técnica](../REFERENCIA_TECNICA.md).
+
+Tras cerrar la atención, Gerencia o el abogado asignado puede archivarla opcionalmente para despejar Consultas. Archivadas conserva el expediente y permite devolverlo a la lista con el mismo estado cerrado; esto no reabre la atención ni desbloquea la evaluación aprobada.
 
 ## Fuentes editables y reproducción
 

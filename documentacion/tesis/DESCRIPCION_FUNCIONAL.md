@@ -4,6 +4,8 @@ Documento de apoyo para redactar y explicar la tesis. Revisión del **1 de novie
 
 > Actualización del flujo documental, 3 de noviembre de 2026: el adjunto queda pendiente al registrar la consulta. La clasificación inicial utiliza solo la descripción; el abogado asignado o Gerencia solicita expresamente el análisis documental. Se conservan los análisis anteriores. Las evidencias históricas indicadas más adelante mantienen sus versiones y alcances.
 
+> Actualización posterior: las atenciones cerradas disponen de archivo opcional y devolución a Consultas, conservando documentos, versiones y estado cerrado. El archivo organiza la lista; no elimina el expediente.
+
 ## 1. Problema planteado y aspecto pendiente de verificar
 
 El autor señala, de forma preliminar, que localizar los documentos de una persona puede tomar tiempo. Esta apreciación permite plantear la búsqueda documental como un problema por investigar, pero todavía no permite determinar su duración, frecuencia, causas o impacto. El procedimiento manual real está pendiente de observar: no se ha confirmado si se utiliza papel, Word, Excel, correo u otra combinación de herramientas.
@@ -47,6 +49,7 @@ El sistema permite que una cuenta de Gerencia atienda casos si tiene un perfil d
 | F11 | Equipo y acceso | Gerencia configura las seis especialidades y la disponibilidad. Hay acceso por rol, contraseñas almacenadas con bcrypt y cambio/restablecimiento con revocación de sesiones anteriores. |
 | F12 | Portales y actualización | /consulta recibe al cliente; /equipo/* es privado. El panel actualiza datos cada diez segundos mientras está visible, al volver a la pestaña o recuperar conexión; permite actualizar manualmente. Respeta permisos y filtros. |
 | F13 | Recordatorios de plazos | La API configurada revisa etapas de 48 h, 24 h o vencimiento y puede avisar por Gmail al abogado/Gerencia responsable. Guarda una reserva por plazo, destinatario y etapa. La alerta visual aparece solo en Consultas y Control de plazos y permite abrir el caso exacto. La API debe permanecer encendida. |
+| F14 | Archivo de consultas | Gerencia y el abogado asignado pueden archivar una atención inicial cerrada y devolverla a la lista sin reabrirla. Consultas y Archivadas conservan documentos, evaluación, versiones e historial. Soporte consulta ambos grupos; archivar y devolver quedan registrados con su actor. |
 
 La aplicación constituye una gestión de atención inicial y seguimiento registrado por el equipo. El cierre de atención inicial no equivale a concluir automáticamente un proceso judicial completo.
 

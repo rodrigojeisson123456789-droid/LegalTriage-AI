@@ -18,6 +18,8 @@ export function routeAllowed(role, method, path, body = {}) {
   if (/^\/cases\/\d+$/.test(path) && method === "PATCH")
     return role === "soporte" || body.lawyer_id === undefined;
   if (/^\/cases\/\d+$/.test(path) && method === "GET") return true;
+  if (/^\/cases\/\d+\/archive$/.test(path))
+    return role === "abogado" && method === "PATCH";
   if (path === "/deadlines" && method === "POST") return role === "abogado";
   if (/^\/documents\/\d+\/(download|analyze)$/.test(path))
     return (

@@ -5,6 +5,10 @@ function description(event) {
   switch (event.action) {
     case "case.created":
       return "Se recibió y guardó la consulta.";
+    case "case.archived":
+      return "Consulta archivada; se conservan el estado cerrado, los documentos y el historial.";
+    case "case.unarchived":
+      return "Consulta devuelta a la lista de Consultas; conserva su estado cerrado.";
     case "case.classified":
       return d.status === "classified"
         ? `Clasificación sugerida: ${d.specialty}.`

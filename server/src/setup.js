@@ -8,6 +8,11 @@ try {
   await db.query(
     `CREATE TABLE IF NOT EXISTS cases (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(120) NOT NULL, document VARCHAR(11) NOT NULL, email VARCHAR(254) NOT NULL, phone VARCHAR(25) NOT NULL, description TEXT NOT NULL, specialty ENUM('Civil','Corporativo','Familia','Bancario','Indeterminado') NOT NULL, classification_status ENUM('classified','unavailable') NOT NULL, status ENUM('Nuevo','En evaluación') NOT NULL DEFAULT 'Nuevo', lawyer_id INT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(lawyer_id) REFERENCES users(id))`,
   );
+  const [archiveColumns] = await db.query(
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='cases' AND COLUMN_NAME='archived_at'",
+  );
+  if (!archiveColumns.length)
+    await db.query("ALTER TABLE cases ADD COLUMN archived_at DATETIME NULL");
   await db.query(
     `CREATE TABLE IF NOT EXISTS deadlines (id INT AUTO_INCREMENT PRIMARY KEY, case_id INT NOT NULL, title VARCHAR(200) NOT NULL, due_at DATETIME NOT NULL, created_by INT NOT NULL, FOREIGN KEY(case_id) REFERENCES cases(id), FOREIGN KEY(created_by) REFERENCES users(id), INDEX(due_at))`,
   );

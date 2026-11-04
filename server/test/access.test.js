@@ -38,6 +38,10 @@ test("roles: Gerencia administra, Soporte tramita y Abogado evalúa sin reasigna
   assert.equal(routeAllowed("abogado", "POST", "/cases/1/auto-assign"), false);
   assert.equal(routeAllowed("abogado", "GET", "/team"), false);
   assert.equal(routeAllowed("gerencia", "POST", "/users"), true);
+  assert.equal(routeAllowed("gerencia", "PATCH", "/cases/1/archive"), true);
+  assert.equal(routeAllowed("abogado", "PATCH", "/cases/1/archive"), true);
+  assert.equal(routeAllowed("soporte", "PATCH", "/cases/1/archive"), false);
+  assert.equal(routeAllowed("abogado", "DELETE", "/cases/1/archive"), false);
   for (const role of ["gerencia", "soporte", "abogado"])
     assert.equal(routeAllowed(role, "GET", "/cases/1"), true);
   assert.equal(routeAllowed("inventado", "GET", "/cases"), false);

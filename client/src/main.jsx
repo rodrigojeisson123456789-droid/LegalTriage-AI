@@ -27,6 +27,8 @@ import {
   UserRoundPlus,
   ChevronRight,
   RefreshCw,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import "./style.css";
 import "./design.css";
@@ -94,6 +96,8 @@ function App() {
   const [view, setView] = useState(portal ? "login" : "public"),
     [user, setUser] = useState(null),
     [cases, setCases] = useState([]),
+    [archivedCases, setArchivedCases] = useState([]),
+    [archiveView, setArchiveView] = useState(false),
     [deadlines, setDeadlines] = useState([]),
     [users, setUsers] = useState([]),
     [error, setError] = useState(""),
@@ -128,6 +132,8 @@ function App() {
     identity.current = nextUser;
     setUser(nextUser);
     setCases([]);
+    setArchivedCases([]);
+    setArchiveView(false);
     setDeadlines([]);
     setUsers([]);
     setSearch("");
@@ -167,8 +173,9 @@ function App() {
     setSyncing(true);
     try {
       const caseId = focusedCaseId.current;
-      const [c, d, u, me, mail, selected] = await Promise.all([
+      const [c, archived, d, u, me, mail, selected] = await Promise.all([
         api("/cases", { signal }),
+        api("/cases?archive=archived", { signal }),
         api("/deadlines", { signal }),
         api("/users", { signal }),
         api("/me", { signal }),
@@ -190,6 +197,7 @@ function App() {
         return;
       }
       setCases(c);
+      setArchivedCases(archived);
       setDeadlines(d);
       setUsers(u);
       setMailSettings(mail);
@@ -328,6 +336,32 @@ function App() {
       }
     });
   }
+  function setArchiveList(archived) {
+    clearCaseFocus();
+    setArchiveView(archived);
+    setSearch("");
+    setStatusFilter("all");
+  }
+  function archiveCase(c) {
+    const archived = !c.archived_at;
+    if (
+      !window.confirm(
+        archived
+          ? `¿Archivar la consulta #${c.id}? Se conservarán sus documentos y su historial.`
+          : `¿Devolver la consulta #${c.id} a Consultas? Mantendrá su estado cerrado.`,
+      )
+    )
+      return;
+    act(async () => {
+      await api(`/cases/${c.id}/archive`, {
+        method: "PATCH",
+        body: JSON.stringify({ archived }),
+      });
+      clearCaseFocus();
+      await load();
+      announceWorkspaceChange();
+    });
+  }
   useEffect(() => {
     if (!focusedCase || view !== "dashboard" || !pendingCaseFocus.current)
       return;
@@ -359,9 +393,10 @@ function App() {
   const alerts = displayDeadlines.filter(
     (d) => d.urgency === "Crítico" || d.urgency === "Próximo",
   );
+  const caseList = archiveView ? archivedCases : cases;
   const visibleCases = focusedCase
     ? [focusedCase]
-    : cases.filter(
+    : caseList.filter(
         (c) =>
           (statusFilter === "all" || c.status === statusFilter) &&
           `${c.id} ${c.name} ${c.specialty} ${c.description}`
@@ -933,7 +968,7 @@ function App() {
               </p>
               <div className="stats">
                 {[
-                  ["Consultas recibidas", cases.length],
+                  ["Consultas sin archivar", cases.length],
                   [
                     "Pendientes de evaluación",
                     cases.filter((c) => c.status === "Nuevo").length,
@@ -952,7 +987,11 @@ function App() {
               </div>
               <section className="card table-card case-register">
                 <div className="table-heading">
-                  <h2>Consultas entrantes</h2>
+                  <h2>
+                    {archiveView
+                      ? "Consultas archivadas"
+                      : "Consultas entrantes"}
+                  </h2>
                   <label className="search">
                     <Search size={16} />
                     <input
@@ -966,10 +1005,42 @@ function App() {
                     />
                   </label>
                 </div>
+                <div
+                  className="case-filter-bar"
+                  role="group"
+                  aria-label="Elegir lista de consultas"
+                >
+                  <button
+                    type="button"
+                    className={`case-filter ${!archiveView ? "selected" : ""}`}
+                    aria-pressed={!archiveView}
+                    onClick={() => setArchiveList(false)}
+                  >
+                    Consultas <span>{cases.length}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`case-filter ${archiveView ? "selected" : ""}`}
+                    aria-pressed={archiveView}
+                    onClick={() => setArchiveList(true)}
+                  >
+                    Archivadas <span>{archivedCases.length}</span>
+                  </button>
+                </div>
+                {archiveView && (
+                  <p className="notice">
+                    Aquí se conservan las consultas archivadas con sus
+                    documentos, respuestas e historial. Devolver una consulta a
+                    la lista no reabre su atención.
+                  </p>
+                )}
                 {focusedCase && (
                   <div className="notice case-focus-notice">
                     <span>
                       Caso #{focusedCase.id} seleccionado desde una alerta.
+                      {focusedCase.archived_at
+                        ? " Esta consulta está archivada."
+                        : ""}
                     </span>
                     <button
                       type="button"
@@ -980,38 +1051,41 @@ function App() {
                     </button>
                   </div>
                 )}
-                <div
-                  className="case-filter-bar"
-                  role="group"
-                  aria-label="Filtrar consultas por estado"
-                >
-                  {[
-                    ["all", "Todas"],
-                    ["Nuevo", "Nuevas"],
-                    ["En evaluación", "En evaluación"],
-                    ["Pendiente de aclaración", "Con aclaración"],
-                  ].map(([value, label]) => (
-                    <button
-                      type="button"
-                      key={value}
-                      className={`case-filter ${statusFilter === value ? "selected" : ""}`}
-                      aria-pressed={statusFilter === value}
-                      onClick={() => {
-                        clearCaseFocus();
-                        setStatusFilter(value);
-                      }}
-                    >
-                      {label}
-                      <span>
-                        {
-                          cases.filter(
-                            (c) => value === "all" || c.status === value,
-                          ).length
-                        }
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                {!archiveView && (
+                  <div
+                    className="case-filter-bar"
+                    role="group"
+                    aria-label="Filtrar consultas por estado"
+                  >
+                    {[
+                      ["all", "Todas"],
+                      ["Nuevo", "Nuevas"],
+                      ["En evaluación", "En evaluación"],
+                      ["Pendiente de aclaración", "Con aclaración"],
+                      ["Atención inicial cerrada", "Cerradas"],
+                    ].map(([value, label]) => (
+                      <button
+                        type="button"
+                        key={value}
+                        className={`case-filter ${statusFilter === value ? "selected" : ""}`}
+                        aria-pressed={statusFilter === value}
+                        onClick={() => {
+                          clearCaseFocus();
+                          setStatusFilter(value);
+                        }}
+                      >
+                        {label}
+                        <span>
+                          {
+                            caseList.filter(
+                              (c) => value === "all" || c.status === value,
+                            ).length
+                          }
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="table-scroll">
                   <table role="table" aria-label="Consultas del equipo">
                     <thead>
@@ -1052,6 +1126,9 @@ function App() {
                             >
                               {c.status}
                             </span>
+                            {c.archived_at && (
+                              <small>Archivada el {date(c.archived_at)}</small>
+                            )}
                           </td>
                           <td role="cell" className="case-record-client">
                             <span className="case-field-label">Cliente</span>
@@ -1210,13 +1287,27 @@ function App() {
                                   Mover a evaluación
                                 </CaseAction>
                               )}
+                              {canLegal &&
+                                c.status === "Atención inicial cerrada" && (
+                                  <CaseAction
+                                    icon={
+                                      c.archived_at ? ArchiveRestore : Archive
+                                    }
+                                    disabled={busy}
+                                    onClick={() => archiveCase(c)}
+                                  >
+                                    {c.archived_at
+                                      ? "Devolver a Consultas"
+                                      : "Archivar consulta"}
+                                  </CaseAction>
+                                )}
                             </div>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
-                  {!!cases.length && !visibleCases.length && (
+                  {!!caseList.length && !visibleCases.length && (
                     <div className="empty case-empty">
                       <Search size={25} aria-hidden="true" />
                       <h3>No hay consultas con estos filtros</h3>
@@ -1233,15 +1324,18 @@ function App() {
                       </button>
                     </div>
                   )}
-                  {!cases.length && !focusedCase && (
+                  {!caseList.length && !focusedCase && (
                     <div className="empty">
-                      Aún no hay consultas. Las nuevas solicitudes aparecerán
-                      aquí.
+                      {archiveView
+                        ? "No hay consultas archivadas."
+                        : "Aún no hay consultas en esta lista. Las nuevas solicitudes aparecerán aquí."}
                     </div>
                   )}
                 </div>
                 <div className="table-note">
-                  Se muestran hasta las 500 consultas más recientes.
+                  {archiveView
+                    ? "Se muestran hasta las 500 consultas archivadas más recientes."
+                    : "Se muestran hasta las 500 consultas más recientes que no están archivadas."}
                 </div>
               </section>
             </>

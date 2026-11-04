@@ -14,6 +14,7 @@ reanalyze [label="Abogado / Gerencia solicita análisis\nDocumento + respuestas 
 approve [label="Abogado redacta, revisa\ny aprueba respuesta y decisión"];
 judicial [label="Seguimiento judicial\nRegistrar fechas verificadas"];
 close [label="Cerrar atención inicial\nNo equivale a concluir juicio"];
+archive [label="Archivo opcional por Abogado / Gerencia\nConservar expediente e historial"];
 respond [label="Gmail configurado: respuesta aprobada\nEnlace privado para el cliente"];
 remind [label="Panel y Gmail al responsable\n48 h / 24 h / vencido"];
 form -> validate [label=""];
@@ -32,5 +33,7 @@ review -> approve [label="Criterio profesional"];
 approve -> judicial [label="Decisión judicial"];
 approve -> close [label="Decisión de cierre"];
 approve -> respond [label="Aprobación explícita"];
+close -> archive [label="Archivar consulta"];
+archive -> close [label="Devolver a lista, sigue cerrada"];
 judicial -> remind [label="Solo plazos registrados"];
 }
