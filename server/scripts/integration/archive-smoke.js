@@ -86,7 +86,7 @@ try {
     email: suffix + "@example.com",
     phone: "999999999",
     description:
-      "Consulta laboral ficticia para probar el archivo de una atención cerrada.",
+      "Consulta laboral ficticia para probar el archivo manual en cualquier estado.",
     consent: "true",
   }))
     form.set(key, value);
@@ -101,6 +101,13 @@ try {
     (await req(manager.cookie, path, "PATCH", { lawyer_id: lawyer.id })).status,
     204,
   );
+  const deadlineResponse = await req(lawyer.cookie, "/deadlines", "POST", {
+    case_id: id,
+    title: "Plazo ficticio que sigue activo al archivar",
+    due_at: new Date(Date.now() + 6 * 3600000).toISOString(),
+  });
+  assert.equal(deadlineResponse.status, 201);
+  const deadlineId = (await deadlineResponse.json()).id;
   for (const status of [
     "Nuevo",
     "En evaluación",
@@ -110,9 +117,36 @@ try {
     await db.execute("UPDATE cases SET status=? WHERE id=?", [status, id]);
     assert.equal(
       (await req(lawyer.cookie, archive, "PATCH", { archived: true })).status,
-      409,
+      204,
     );
+    assert.equal((await json(lawyer.cookie, path)).status, status);
+    assert.ok((await json(lawyer.cookie, path)).archived_at);
+    assert.equal(
+      (await json(lawyer.cookie, "/cases")).some((c) => c.id === id),
+      false,
+    );
+    assert.ok(
+      (await json(lawyer.cookie, "/cases?archive=archived")).some(
+        (c) => c.id === id && c.status === status,
+      ),
+    );
+    const reminder = (await json(lawyer.cookie, "/deadlines")).find(
+      (d) => d.id === deadlineId,
+    );
+    assert.ok(reminder);
+    assert.equal(reminder.case_status, status);
+    assert.equal(reminder.urgency, "Crítico");
+    const teamMember = (await json(manager.cookie, "/team")).find(
+      (u) => u.id === lawyer.id,
+    );
+    assert.equal(Number(teamMember.active_cases), 1);
+    assert.equal(
+      (await req(lawyer.cookie, archive, "PATCH", { archived: false })).status,
+      204,
+    );
+    assert.equal((await json(lawyer.cookie, path)).status, status);
   }
+  await db.execute("DELETE FROM deadlines WHERE id=?", [deadlineId]);
   await db.execute("UPDATE cases SET status='En evaluación' WHERE id=?", [id]);
   const evaluation = {
     expected_revision: 0,
@@ -216,7 +250,7 @@ try {
   let history = await json(lawyer.cookie, path + "/history");
   assert.equal(
     history.events.filter((e) => e.action === "case.archived").length,
-    1,
+    5,
   );
   assert.equal(
     history.events.find((e) => e.action === "case.archived").actor_role,
@@ -276,7 +310,7 @@ try {
   history = await json(lawyer.cookie, path + "/history");
   assert.equal(
     history.events.filter((e) => e.action === "case.unarchived").length,
-    1,
+    5,
   );
   assert.equal(
     history.events.find((e) => e.action === "case.unarchived").actor_role,
@@ -287,7 +321,7 @@ try {
     beforeDocuments,
   );
   console.log(
-    "Archive smoke OK: solo atención cerrada, permisos, listas separadas, acceso directo, documento y respuesta conservados, historial sin duplicados, migración repetible y devolución sin reabrir.",
+    "Archive smoke OK: archivo manual en todos los estados, plazos y carga de trabajo activos, permisos, listas separadas, acceso directo, documento y respuesta conservados, historial sin duplicados, migración repetible y devolución con el mismo estado.",
   );
 } finally {
   if (child && child.exitCode === null) {

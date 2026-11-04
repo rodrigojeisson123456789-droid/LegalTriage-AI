@@ -389,6 +389,26 @@ try {
     "02-asignacion.png",
     "Respuesta Gemini simulada Laboral; algoritmo real asignó la abogada disponible.",
   );
+  // También puede archivarse individualmente una consulta todavía nueva.
+  const initialLists = p.getByRole("group", {
+    name: "Elegir lista de consultas",
+  });
+  p.once("dialog", (dialog) => dialog.accept());
+  await row
+    .getByRole("button", { name: "Archivar consulta", exact: true })
+    .click();
+  await row.waitFor({ state: "detached" });
+  await initialLists.getByRole("button", { name: /^Archivadas / }).click();
+  await row.getByText("Nuevo", { exact: true }).waitFor();
+  await row.getByText(/Archivada el/).waitFor();
+  await screenshot(p, "16-consulta-nueva-archivada.png");
+  p.once("dialog", (dialog) => dialog.accept());
+  await row
+    .getByRole("button", { name: "Devolver a Consultas", exact: true })
+    .click();
+  await row.waitFor({ state: "detached" });
+  await initialLists.getByRole("button", { name: /^Consultas / }).click();
+  await row.getByText("Nuevo", { exact: true }).waitFor();
   await row.getByRole("button", { name: "Ver documentos y análisis" }).click();
   await p.getByText(/Pendiente de revisión por el abogado/).waitFor();
   assert.equal(await p.getByText(analysis.summary, { exact: true }).count(), 0);
@@ -676,9 +696,10 @@ try {
   await row.getByRole("button", { name: "Historial del caso" }).click();
   await p
     .getByText(
-      "Consulta archivada; se conservan el estado cerrado, los documentos y el historial.",
+      "Consulta archivada manualmente; se conservan su estado, los documentos y el historial.",
       { exact: true },
     )
+    .first()
     .waitFor();
   await p.getByRole("button", { name: "Cerrar historial" }).click();
   await screenshot(p, "15-consulta-archivada.png");
@@ -695,9 +716,9 @@ try {
   );
   passed(
     "UI-14",
-    "Archivo y devolución de consulta cerrada",
+    "Archivo manual de consultas abiertas y cerradas",
     "15-consulta-archivada.png",
-    "Confirmación cancelable, listas separadas, documento y análisis conservados, evento en historial y devolución sin reabrir la atención.",
+    "Archivo manual en estado Nuevo y cerrado, confirmación cancelable, listas separadas, contenido e historial conservados y devolución con el mismo estado.",
   );
   const s = await newPage();
   await login(s, support);
@@ -776,6 +797,14 @@ try {
     );
   const admin = await newPage();
   await login(admin, manager);
+  assert.equal(
+    (
+      await admin.request.patch(`${api}/cases/${liveCase.insertId}/archive`, {
+        data: { archived: true },
+      })
+    ).status(),
+    204,
+  );
   await admin
     .getByRole("region", { name: "Recordatorios de plazos" })
     .getByText("1 vencido(s)", { exact: true })
@@ -808,6 +837,10 @@ try {
     })
     .click();
   await admin.locator(".case-record-focused").waitFor();
+  await admin
+    .locator(".case-record-focused")
+    .getByText(/Archivada el/)
+    .waitFor();
   assert.equal(await admin.locator(".case-record").count(), 1);
   assert.equal(
     await admin.locator(".case-record-focused").getAttribute("id"),
@@ -847,6 +880,20 @@ try {
     .filter({ hasText: "PLAZO FICTICIO CRITICO" });
   await criticalRow.getByText("Crítico", { exact: true }).waitFor();
   await criticalRow.getByText(/Vence en/).waitFor();
+  await admin
+    .getByRole("button", { name: "Nuevo plazo", exact: true })
+    .click();
+  const deadlineDialog = admin.getByRole("dialog", {
+    name: "Registrar plazo procesal",
+  });
+  const archivedOption = deadlineDialog.locator(
+    `select[name='case_id'] option[value='${liveCase.insertId}']`,
+  );
+  assert.equal(await archivedOption.count(), 1);
+  assert.match(await archivedOption.innerText(), /archivada/);
+  await deadlineDialog
+    .getByRole("button", { name: "Cancelar", exact: true })
+    .click();
   await admin
     .getByRole("row")
     .filter({ hasText: "PLAZO FICTICIO VENCIDO" })

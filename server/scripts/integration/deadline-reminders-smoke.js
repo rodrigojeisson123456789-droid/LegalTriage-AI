@@ -83,6 +83,11 @@ try {
   const ca = await record(a),
     cb = await record(a),
     cc = await record(a);
+  // El archivo manual no desactiva recordatorios de una atención abierta.
+  await db.execute("UPDATE cases SET archived_at=? WHERE id=?", [
+    new Date(),
+    ca,
+  ]);
   const first = await deadline(ca, 36);
   await deadline(cb, 12);
   await deadline(cc, -1);

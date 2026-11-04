@@ -266,19 +266,10 @@ app.patch("/api/cases/:id/archive", async (req, res) => {
   try {
     await connection.beginTransaction();
     const [rows] = await connection.execute(
-      "SELECT status,archived_at FROM cases WHERE id=? FOR UPDATE",
+      "SELECT archived_at FROM cases WHERE id=? FOR UPDATE",
       [id],
     );
     await guardCaseWrite(req, connection, id);
-    if (archived && rows[0].status !== "Atención inicial cerrada") {
-      await connection.rollback();
-      return res
-        .status(409)
-        .json({
-          error:
-            "Solo puedes archivar una consulta con la atención inicial cerrada.",
-        });
-    }
     if (Boolean(rows[0].archived_at) !== archived) {
       await connection.execute("UPDATE cases SET archived_at=? WHERE id=?", [
         archived ? new Date() : null,

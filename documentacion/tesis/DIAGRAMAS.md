@@ -24,7 +24,7 @@ La validación del formulario no determina viabilidad jurídica. La clasificaci�
 
 El diagrama resume el flujo; las restricciones de aprobación, plazos y permisos se detallan en la [descripción funcional](DESCRIPCION_FUNCIONAL.md) y en la [referencia técnica](../REFERENCIA_TECNICA.md).
 
-Tras cerrar la atención, Gerencia o el abogado asignado puede archivarla opcionalmente para despejar Consultas. Archivadas conserva el expediente y permite devolverlo a la lista con el mismo estado cerrado; esto no reabre la atención ni desbloquea la evaluación aprobada.
+Gerencia o el abogado asignado puede archivar manualmente cada consulta, abierta o cerrada, para despejar Consultas. El circuito Consultas ↔ Archivadas conserva el expediente y su estado; no cierra una atención abierta ni desbloquea una evaluación aprobada. Los plazos, recordatorios y la carga de las atenciones abiertas archivadas siguen activos.
 
 ## Fuentes editables y reproducción
 
